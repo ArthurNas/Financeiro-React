@@ -1,0 +1,8 @@
+Criar cadastro de proventos
+Criar cadastro de usuarios
+mascara pra valor
+Criar tela de login
+Dashboards
+
+no back:
+criar vinculos com usuarios

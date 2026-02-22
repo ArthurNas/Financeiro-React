@@ -1,5 +1,5 @@
 import { Sidebar, SidebarItem, SidebarItemGroup, SidebarItems } from "flowbite-react";
-import { HiPlusCircle, HiTable, HiChartPie, HiTag } from "react-icons/hi";
+import { HiLogout, HiTable, HiChartPie, HiTag } from "react-icons/hi";
 import { Link, useLocation } from "react-router-dom";
 
 
@@ -8,6 +8,11 @@ export function BarraLateral() {
 
   // Função simples para verificar se a rota está ativa e mudar a cor
   const isSelected = (path) => location.pathname === path;
+
+  const handleLogout = () => {
+    localStorage.removeItem('token'); // Remove o JWT
+    window.location.href = '/login';   // Força o redirecionamento
+  };
   
   return (
     <Sidebar aria-label="Menu Principal" className="h-screen border-r border-gray-200">
@@ -37,6 +42,9 @@ export function BarraLateral() {
             Tipos de Despesa
           </SidebarItem>
         </SidebarItemGroup>
+        <SidebarItem onClick={handleLogout} icon={HiLogout} className="cursor-pointer text-red-500 hover:bg-red-50">
+          Sair do Sistema
+        </SidebarItem>
       </SidebarItems>
     </Sidebar>
   );
