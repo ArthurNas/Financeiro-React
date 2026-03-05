@@ -3,6 +3,10 @@ Criar cadastro de usuarios
 mascara pra valor
 Criar tela de login
 Dashboards
+Pq aparece varios console Log ao ir pra uma tela
 
 no back:
 criar vinculos com usuarios
+
+12345678
+qwert

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wallet, Lock, Mail, Eye, EyeOff } from 'lucide-react';
-import api from '../../lib/api';
+import usuarioService from '../../service/usuarioService';
+import MessageModal from '../../components/messageModal';
 
 export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -16,25 +18,25 @@ export default function Login() {
   const handleLogin = (e) => {
     e.preventDefault();
     
-    // Chamada ao teu novo endpoint do Spring Boot
-    api.post('/auth/login', { 
+    usuarioService.login({ 
         email: credentials.email, 
         senha: credentials.password 
     })
     .then(response => {
         const { token } = response.data;
-        localStorage.setItem('token', token); // Guarda o JWT
-        navigate('/'); // Vai para a Home
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', response.data.role);
+        localStorage.setItem('userId', response.data.userId);
+        navigate('/');
     })
     .catch(err => {
-        // Aqui podes usar o teu MessageModal de erro!
-        setModal({ 
-            open: true, 
-            type: 'error', 
-            message: 'Email ou senha inválidos.' 
-            });
+      setModal({ 
+          open: true, 
+          type: 'error', 
+          message: 'Email ou senha inválidos.' 
         });
-    };
+    });
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -128,6 +130,15 @@ export default function Login() {
           </p>
         </div>
       </div>
+
+      <MessageModal isOpen={modal.open} type={modal.type}message={modal.message}
+        onClose={() => {
+          setModal({ ...modal, open: false });
+          if (modal.type === 'success') navigate('/');
+        }}
+      />
     </div>
+
+
   );
 }
