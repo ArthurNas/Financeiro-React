@@ -1,10 +1,25 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
 import { HiCheckCircle, HiExclamationCircle, HiX } from 'react-icons/hi';
 
 export default function MessageModal({ isOpen, onClose, type = 'success', title, message }) {
   if (!isOpen) return null;
 
   const isSuccess = type === 'success';
+
+  /*const btnRef = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      
+      requestAnimationFrame(() => {
+        if (btnRef.current) {
+          btnRef.current.focus();
+        }
+      });
+    }
+  }, [open]);
+
+  if (!open) return null;*/
 
   return (
     // Overlay (Background)
@@ -40,7 +55,7 @@ export default function MessageModal({ isOpen, onClose, type = 'success', title,
           </p>
 
           {/* Botão de Confirmação */}
-          <button onClick={onClose} className={`w-full py-2.5 rounded-lg font-semibold text-white transition-all cursor-pointer shadow-lg 
+          <button autoFocus onClick={onClose} className={`w-full py-2.5 rounded-lg font-semibold text-white transition-all cursor-pointer shadow-lg 
                 ${isSuccess ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'}`}>
             OK
           </button>

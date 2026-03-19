@@ -1,12 +1,19 @@
 Criar cadastro de proventos
-Criar cadastro de usuarios
 mascara pra valor
-Criar tela de login
 Dashboards
-Pq aparece varios console Log ao ir pra uma tela
+
+Bugs:
+Ao salvar uma nova despesa, se dou enter, o modal aparece porem ao dar mais enter o sistema duplica a despesa
+
+Feitos
+Criar tela de login
+Criar cadastro de usuarios
 
 no back:
 criar vinculos com usuarios
 
 12345678
+
+Joao@gmail.com
 qwert
+

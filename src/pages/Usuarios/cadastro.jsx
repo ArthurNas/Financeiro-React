@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, User, Mail, Lock, Shield } from 'lucide-react';
+import { ArrowLeft, Save, User } from 'lucide-react';
 import usuarioService from '../../service/usuarioService';
 
 function CadastroUsuario() {
   const { state } = useLocation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const userRoleLogado = localStorage.getItem('role');
   
   const editando = !!state?.usuario || !!id;
 

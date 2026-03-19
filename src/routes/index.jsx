@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from '../pages/Home';
-import Cadastro from '../pages/Despesa/Cadastro';
+import Despesa from '../pages/Despesa';
+import CadastroDespesa from '../pages/Despesa/Cadastro';
 import Tipo from '../pages/TipoDespesa';
 import CadastroTipo from '../pages/TipoDespesa/cadastro';
 import { MainLayout } from '../layout/MainLayout';
@@ -8,6 +9,8 @@ import { ProtectedRoute } from '../components/ProtectedRoute';
 import Login from '../pages/Login'
 import ConsultaUsuarios from '../pages/Usuarios'
 import CadastroUsuario from '../pages/Usuarios/cadastro';
+import Provento from '../pages/Provento';
+import CadastroProvento from '../pages/Provento/Cadastro';
 
 function App() {
   const userId = localStorage.getItem('userId');
@@ -25,12 +28,15 @@ function App() {
               <MainLayout>
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/cadastro" element={<Cadastro />} />
+                  <Route path="/despesa" element={<Despesa />} />
+                  <Route path="/cadastroDespesa" element={<CadastroDespesa />} />
                   <Route path="/tipo" element={<Tipo />} />
                   <Route path="/cadastroTipo" element={<CadastroTipo />} />
-                  <Route path="/usuarios" element={userRole === 'ADMIN' ? <ConsultaUsuarios /> : <Navigate to="/" />} />
+                  <Route path="/usuarios" element={<ConsultaUsuarios />} />
                   <Route path="/cadastroUsuario" element={<CadastroUsuario />} />
                   <Route path="/usuarios/editar/:id" element={<CadastroUsuario />} />
+                  <Route path="/provento" element={<Provento />} />
+                  <Route path="/cadastroProvento" element={<CadastroProvento />} />
                 </Routes>
               </MainLayout>
             </ProtectedRoute>

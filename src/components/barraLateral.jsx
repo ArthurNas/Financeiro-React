@@ -1,5 +1,5 @@
 import { Sidebar, SidebarItem, SidebarItemGroup, SidebarItems } from "flowbite-react";
-import { HiLogout, HiTable, HiChartPie, HiTag, HiUserCircle, HiUsers } from "react-icons/hi";
+import { HiLogout, HiTable, HiChartPie, HiTag, HiUserCircle, HiUsers, HiTrendingUp } from "react-icons/hi";
 import { Link, useLocation, Navigate } from "react-router-dom";
 
 
@@ -34,7 +34,7 @@ export function BarraLateral() {
             }`}>
             Home
           </SidebarItem>
-          <SidebarItem as={Link} to="/" icon={HiTable} className={`transition-all duration-200 ${
+          <SidebarItem as={Link} to="/despesa" icon={HiTable} className={`transition-all duration-200 ${
               isSelected("/despesa") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
             }`}>
             Despesas
@@ -44,6 +44,12 @@ export function BarraLateral() {
               isSelected("/tipo") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
             }`}>
             Tipos de Despesa
+          </SidebarItem>
+
+          <SidebarItem as={Link} to="/provento" icon={HiTrendingUp} className={`transition-all duration-200 ${
+              isSelected("/provento") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
+            }`}>
+            Proventos
           </SidebarItem>
         </SidebarItemGroup>
 
