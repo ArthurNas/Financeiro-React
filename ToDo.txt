@@ -1,6 +1,5 @@
-Criar cadastro de proventos
-mascara pra valor
 Dashboards
+Criar validador pra senhas complexas
 
 Bugs:
 Ao salvar uma nova despesa, se dou enter, o modal aparece porem ao dar mais enter o sistema duplica a despesa
@@ -8,9 +7,8 @@ Ao salvar uma nova despesa, se dou enter, o modal aparece porem ao dar mais ente
 Feitos
 Criar tela de login
 Criar cadastro de usuarios
-
-no back:
-criar vinculos com usuarios
+Criar cadastro de proventos
+mascara pra valor
 
 12345678
 

@@ -19,7 +19,7 @@ export function BarraLateral() {
   };
   
   return (
-    <Sidebar aria-label="Menu Principal" className="h-screen border-r border-gray-200 flex flex-col">
+    <Sidebar aria-label="Menu Principal" className="h-screen border-r border-gray-200">
       <div className="mb-8 px-4 py-2 pt-3">
         <span className="self-center whitespace-nowrap text-xl font-bold text-blue-700 flex items-center gap-2">
           <HiChartPie className="text-2xl" /> 
@@ -27,7 +27,7 @@ export function BarraLateral() {
         </span>
       </div>
       
-      <SidebarItems>
+      <SidebarItems className="flex flex-col justify-between h-[calc(100vh-120px)]">
         <SidebarItemGroup>
           <SidebarItem as={Link} to="/" icon={HiChartPie} className={`transition-all duration-200 ${
               isSelected("/") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
@@ -53,18 +53,18 @@ export function BarraLateral() {
           </SidebarItem>
         </SidebarItemGroup>
 
-        <SidebarItemGroup>
+        <SidebarItemGroup className="mt-auto border-t border-gray-100 pt-4">
           {userRole === 'ADMIN' && (
-            <SidebarItem as={Link} to="/usuarios" icon={HiUsers}>
+            <SidebarItem as={Link} to="/usuarios" icon={HiUsers} className={`transition-all duration-200 ${
+                isSelected("/usuarios") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
+              }`}>
               Consultar Usuários
             </SidebarItem>
           )}
 
-          {/*
-          as={Link} to={`/usuarios/editar/${userId}`} icon={HiUserCircle}
-          <SidebarItem as={Link} to="/cadastroUsuario" icon={HiUserCircle}>
-          */}
-            <SidebarItem as={Link} to={`/usuarios/editar/${userId}`} icon={HiUserCircle}>
+          <SidebarItem as={Link} to={`/usuarios/editar/${userId}`} icon={HiUserCircle} className={`transition-all duration-200 ${
+              isSelected("/usuarios/editar/") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
+            }`}>
             Meu Perfil
           </SidebarItem>
           <SidebarItem onClick={handleLogout} icon={HiLogout} className="cursor-pointer text-red-500 hover:bg-red-50">

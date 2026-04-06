@@ -162,7 +162,7 @@ function Cadastro() {
       <MessageModal isOpen={modal.open} type={modal.type}message={modal.message}
         onClose={() => {
           setModal({ ...modal, open: false });
-          if (modal.type === 'success') navigate('/');
+          if (modal.type === 'success') navigate('/despesa');
         }}
       />
     </div>    

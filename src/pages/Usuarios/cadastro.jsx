@@ -116,7 +116,7 @@ function CadastroUsuario() {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 border-t pt-6">
+            <div className="flex justify-end gap-2 pt-6">
               <Link to="/usuarios" className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors">
                 <ArrowLeft size={20}/> Voltar
               </Link>
