@@ -1,5 +1,5 @@
 import { Sidebar, SidebarItem, SidebarItemGroup, SidebarItems } from "flowbite-react";
-import { HiLogout, HiTable, HiChartPie, HiTag, HiUserCircle, HiUsers, HiTrendingUp } from "react-icons/hi";
+import { HiLogout, HiTable, HiChartPie, HiTag, HiUserCircle, HiUsers, HiTrendingUp, HiChartBar } from "react-icons/hi";
 import { Link, useLocation, Navigate } from "react-router-dom";
 
 
@@ -32,7 +32,12 @@ export function BarraLateral() {
           <SidebarItem as={Link} to="/" icon={HiChartPie} className={`transition-all duration-200 ${
               isSelected("/") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
             }`}>
-            Home
+            Dashboard Mensal
+          </SidebarItem>
+          <SidebarItem as={Link} to="/dashboard-anual" icon={HiChartBar} className={`transition-all duration-200 ${
+              isSelected("/dashboard-anual") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
+            }`}>
+            Dashboard Anual
           </SidebarItem>
           <SidebarItem as={Link} to="/despesa" icon={HiTable} className={`transition-all duration-200 ${
               isSelected("/despesa") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"

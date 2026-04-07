@@ -10,10 +10,10 @@ export function ProtectedRoute({ children }) {
 
   try {
     const { exp } = jwtDecode(token);
-    console.log(exp * 1000 < Date.now());
-    console.log(exp * 1000);
-    console.log(exp);
-    console.log(Date.now());
+    //console.log(exp * 1000 < Date.now());
+    //console.log(exp * 1000);
+    //console.log(exp);
+    //console.log(Date.now());
     if (exp * 1000 < Date.now()) {
       localStorage.removeItem('token');
       return <Navigate to="/login" replace />;

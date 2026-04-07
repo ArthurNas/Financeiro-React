@@ -11,6 +11,7 @@ import ConsultaUsuarios from '../pages/Usuarios'
 import CadastroUsuario from '../pages/Usuarios/cadastro';
 import Provento from '../pages/Provento';
 import CadastroProvento from '../pages/Provento/Cadastro';
+import DashboardAnual from '../pages/DashboardAnual';
 
 function App() {
   const userId = localStorage.getItem('userId');
@@ -28,6 +29,7 @@ function App() {
               <MainLayout>
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  <Route path="/dashboard-anual" element={<DashboardAnual />} />
                   <Route path="/despesa" element={<Despesa />} />
                   <Route path="/cadastroDespesa" element={<CadastroDespesa />} />
                   <Route path="/tipo" element={<Tipo />} />
