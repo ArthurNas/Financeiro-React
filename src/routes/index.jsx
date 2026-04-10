@@ -1,15 +1,15 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from '../pages/Home';
-import Despesa from '../pages/Despesa';
+import Despesa from '../pages/Despesa/Index';
 import CadastroDespesa from '../pages/Despesa/Cadastro';
-import Tipo from '../pages/TipoDespesa';
-import CadastroTipo from '../pages/TipoDespesa/cadastro';
+import Tipo from '../pages/TipoDespesa/Index';
+import CadastroTipo from '../pages/TipoDespesa/Cadastro';
 import { MainLayout } from '../layout/MainLayout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import Login from '../pages/Login'
-import ConsultaUsuarios from '../pages/Usuarios'
-import CadastroUsuario from '../pages/Usuarios/cadastro';
-import Provento from '../pages/Provento';
+import ConsultaUsuarios from '../pages/Usuarios/Index'
+import CadastroUsuario from '../pages/Usuarios/Cadastro';
+import Provento from '../pages/Provento/Index';
 import CadastroProvento from '../pages/Provento/Cadastro';
 import DashboardAnual from '../pages/DashboardAnual';
 
