@@ -1,17 +1,17 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Home from '../pages/Home';
+import Home from '../pages/Home/Index';
 import Despesa from '../pages/Despesa/Index';
 import CadastroDespesa from '../pages/Despesa/Cadastro';
 import Tipo from '../pages/TipoDespesa/Index';
 import CadastroTipo from '../pages/TipoDespesa/Cadastro';
 import { MainLayout } from '../layout/MainLayout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
-import Login from '../pages/Login'
+import Login from '../pages/Login/Index'
 import ConsultaUsuarios from '../pages/Usuarios/Index'
 import CadastroUsuario from '../pages/Usuarios/Cadastro';
 import Provento from '../pages/Provento/Index';
 import CadastroProvento from '../pages/Provento/Cadastro';
-import DashboardAnual from '../pages/DashboardAnual';
+import DashboardAnual from '../pages/DashboardAnual/Index';
 
 function App() {
   const userId = localStorage.getItem('userId');
