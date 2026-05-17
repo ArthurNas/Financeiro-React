@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import usuarioService from '../../service/usuarioService';
+import { AuthContext } from '../../components/AuthContext';
+import MessageModal from '../../components/messageModal';
 
 function CadastroUsuario() {
   const { state } = useLocation();
   const { id } = useParams();
   const navigate = useNavigate();
-  const userRoleLogado = localStorage.getItem('role');
+  const { user } = useContext(AuthContext);
+  const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
   
   const editando = !!state?.usuario || !!id;
 
@@ -50,9 +53,11 @@ function CadastroUsuario() {
       : usuarioService.salvar(formData);
 
     acao.then(() => {
-        alert("Dados salvos com sucesso!");
-        
-        navigate(userRoleLogado === 'ADMIN' ? '/usuarios' : '/');
+        setModal({
+          open: true,
+          type: "success",
+          message: editando ? "As alterações foram salvas." : "Provento registrado com sucesso!",
+        });
       })
       .catch(error => {
         const mensagemErro = error.response?.data?.mensagem || error.message;
@@ -99,22 +104,18 @@ function CadastroUsuario() {
             </div>
 
             {/* Campo Perfil (Role) */}
-            <div className="mb-6">
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                Nível de Acesso
-              </label>
-              <select id="role" name="role" value={formData.role} onChange={handleChange} disabled={userRoleLogado !== 'ADMIN'}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md outline-none bg-white 
-                  ${userRoleLogado !== 'ADMIN' ? 'bg-gray-100 cursor-not-allowed' : 'focus:ring-blue-500'}`}>
-                <option value="USER">Usuário Comum</option>
-                <option value="ADMIN">Administrador</option>
-              </select>
-              {userRoleLogado !== 'ADMIN' && (
-                <p className="text-xs text-gray-500 mt-1 italic">
-                  Apenas administradores podem alterar o nível de acesso.
-                </p>
-              )}
-            </div>
+            {user?.role === 'ADMIN' && (
+              <div className="mb-6">
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nível de Acesso
+                </label>
+                <select id="role" name="role" value={formData.role} onChange={handleChange} 
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md outline-none bg-white focus:ring-blue-500`}>
+                  <option value="USER">Usuário Comum</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-6">
               <Link to="/usuarios" className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors">
@@ -130,6 +131,13 @@ function CadastroUsuario() {
           </form>
         </div>
       </div>
+
+      <MessageModal isOpen={modal.open} type={modal.type}message={modal.message}
+        onClose={() => {
+          setModal({ ...modal, open: false });
+          if (modal.type === 'success') navigate(user?.role === 'ADMIN' ? '/usuarios' : '/');
+        }}
+      />
     </div>
   );
 }

@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Wallet, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import usuarioService from '../../service/usuarioService';
 import MessageModal from '../../components/messageModal';
+import { useAuth } from '../../components/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { updateUserFromToken } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
@@ -23,11 +25,10 @@ export default function Login() {
         senha: credentials.password 
     })
     .then(response => {
-        const { token } = response.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('role', response.data.role);
-        localStorage.setItem('userId', response.data.userId);
-        navigate('/');
+      const { token } = response.data;
+      localStorage.setItem('token', token);
+      updateUserFromToken(token);
+      navigate('/');
     })
     .catch(err => {
       setModal({ 
@@ -92,7 +93,7 @@ export default function Login() {
               </div>
             </div>
           </div>
-
+          {/*
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <input type="checkbox" className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
@@ -101,23 +102,23 @@ export default function Login() {
             <div className="text-sm">
               <a href="#" className="font-medium text-blue-600 hover:text-blue-500">Esqueceu a senha?</a>
             </div>
-          </div>
+          </div>*/}
 
           <div>
             <button type="submit"
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-lg shadow-blue-100"
             >
-              Entrar no Sistema
+              Entrar
             </button>
           </div>
         </form>
-
+{/*
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">
             Não tem uma conta?{' '}
             <a href="#" className="font-medium text-blue-600 hover:text-blue-500">Solicitar acesso</a>
           </p>
-        </div>
+        </div>*/}
       </div>
 
       <MessageModal isOpen={modal.open} type={modal.type}message={modal.message}

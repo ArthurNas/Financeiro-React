@@ -1,22 +1,15 @@
+import { useContext } from 'react';
 import { Sidebar, SidebarItem, SidebarItemGroup, SidebarItems } from "flowbite-react";
 import { HiLogout, HiTable, HiChartPie, HiTag, HiUserCircle, HiUsers, HiTrendingUp, HiChartBar } from "react-icons/hi";
-import { Link, useLocation, Navigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { AuthContext } from './AuthContext';
 
 
 export function BarraLateral() {
   const location = useLocation();
-  const userId = localStorage.getItem('userId');
-  const userRole = localStorage.getItem('role');
-
-  // Função simples para verificar se a rota está ativa e mudar a cor
+  const { user, logout } = useContext(AuthContext);
+  
   const isSelected = (path) => location.pathname === path;
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('userId');
-    window.location.href = '/login';
-  };
   
   return (
     <Sidebar aria-label="Menu Principal" className="h-screen border-r border-gray-200">
@@ -59,7 +52,7 @@ export function BarraLateral() {
         </SidebarItemGroup>
 
         <SidebarItemGroup className="mt-auto border-t border-gray-100 pt-4">
-          {userRole === 'ADMIN' && (
+          {user?.role === 'ROLE_ADMIN' && (
             <SidebarItem as={Link} to="/usuarios" icon={HiUsers} className={`transition-all duration-200 ${
                 isSelected("/usuarios") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
               }`}>
@@ -67,12 +60,12 @@ export function BarraLateral() {
             </SidebarItem>
           )}
 
-          <SidebarItem as={Link} to={`/usuarios/editar/${userId}`} icon={HiUserCircle} className={`transition-all duration-200 ${
+          <SidebarItem as={Link} to={`/usuarios/editar/${user?.id}`} icon={HiUserCircle} className={`transition-all duration-200 ${
               isSelected("/usuarios/editar/") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
             }`}>
             Meu Perfil
           </SidebarItem>
-          <SidebarItem onClick={handleLogout} icon={HiLogout} className="cursor-pointer text-red-500 hover:bg-red-50">
+          <SidebarItem onClick={logout} icon={HiLogout} className="cursor-pointer text-red-500 hover:bg-red-50">
             Sair do Sistema
           </SidebarItem>
         </SidebarItemGroup>
