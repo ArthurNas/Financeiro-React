@@ -52,7 +52,7 @@ export function BarraLateral() {
         </SidebarItemGroup>
 
         <SidebarItemGroup className="mt-auto border-t border-gray-100 pt-4">
-          {user?.role === 'ROLE_ADMIN' && (
+          {user?.role === 'ADMIN' && (
             <SidebarItem as={Link} to="/usuarios" icon={HiUsers} className={`transition-all duration-200 ${
                 isSelected("/usuarios") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
               }`}>

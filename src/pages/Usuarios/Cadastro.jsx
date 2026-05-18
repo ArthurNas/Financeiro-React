@@ -13,7 +13,7 @@ function CadastroUsuario() {
   const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
   
   const editando = !!state?.usuario || !!id;
-
+  
   const [formData, setFormData] = useState({
     id: state?.usuario?.id || '',
     nome: state?.usuario?.nome || '',
@@ -46,8 +46,7 @@ function CadastroUsuario() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Decide qual método chamar no service baseado no estado
+    console.log(formData);
     const acao = editando 
       ? usuarioService.atualizar(formData.id, formData) 
       : usuarioService.salvar(formData);
@@ -56,7 +55,7 @@ function CadastroUsuario() {
         setModal({
           open: true,
           type: "success",
-          message: editando ? "As alterações foram salvas." : "Provento registrado com sucesso!",
+          message: editando ? "As alterações foram salvas." : "Usuário registrado com sucesso!",
         });
       })
       .catch(error => {

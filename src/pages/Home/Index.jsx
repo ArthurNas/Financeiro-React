@@ -224,7 +224,7 @@ const Home = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h2 className="text-sm font-semibold text-gray-500 uppercase mb-4">
-                Gastos por Categoria
+                Gastos por Tipo
               </h2>
               
               {dadosPorTipo.length > 0 ? (
@@ -284,9 +284,7 @@ const Home = () => {
                         position: 'right', 
                         fontSize: 12, 
                         fill: '#6B7280',
-                        // Usamos uma verificação rigorosa (Safe Navigation)
                         formatter: (value, entry) => {
-                          // No label do Bar, o segundo argumento 'entry' geralmente é o próprio objeto do dado
                           return entry?.count ? `${entry.count}x` : '';
                         }
                       }}
