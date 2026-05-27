@@ -4,10 +4,14 @@ import { Plus, Trash2, Wallet, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/confirmModal';
+import MessageModal from '../../components/messageModal';
 
 function TipoDespesa() {
     const [tipos, setDespesas] = useState([])
     const navigate = useNavigate();
+    const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
+    const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
 
     const [filtroDescricao, setFiltroDescricao] = useState('')
 
@@ -26,13 +30,27 @@ function TipoDespesa() {
         buscarDados();
     }, [filtroDescricao]);
 
-    const deletarTipo = (id) => {
-        if (window.confirm("Deseja realmente excluir este registro?")) {
-            tipoService.excluir(id)
-            .then(() => buscarDados())
-            .catch(err => alert("Erro ao deletar: " + err.message))
-        }
-    }
+    const handleAbrirConfirmacao = (id) => {
+      setConfirmModal({ open: true, idParaExcluir: id });
+    };
+
+    const confirmarExclusao = () => {
+      const id = confirmModal.idParaExcluir;
+      if (!id) return;
+
+      tipoService.excluir(id)
+        .then(() => {
+          buscarDados();
+        })
+        .catch(err => {
+          setModal({
+            open: true,
+            type: "error",
+            message: "Erro ao excluir tipo: " + (error.response?.data?.mensagem || error.message),
+          });
+          console.error("Erro ao deletar:", err);
+        });
+    };
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 text-gray-800">
@@ -88,7 +106,7 @@ function TipoDespesa() {
                       className="text-gray-400 hover:text-blue-600 transition-colors p-1">
                       <Edit2 size={18} />
                     </button>
-                    <button onClick={() => deletarTipo(t.id)} className="text-gray-400 hover:text-red-600 p-1">
+                    <button onClick={() => handleAbrirConfirmacao(t.id)} className="text-gray-400 hover:text-red-600 p-1">
                       <Trash2 size={18} />
                     </button>
                 </td>
@@ -101,6 +119,20 @@ function TipoDespesa() {
           )}
         </div>
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmModal.open}
+        title="Excluir Tipo"
+        message="Você tem certeza?"
+        onClose={() => setConfirmModal({ open: false, idParaExcluir: null })}
+        onConfirm={confirmarExclusao}
+      />
+
+      <MessageModal isOpen={modal.open} type={modal.type}message={modal.message}
+        onClose={() => {
+          setModal({ ...modal, open: false });
+        }}
+      />
     </div>
   )
 }
