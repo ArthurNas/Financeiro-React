@@ -1,18 +1,43 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react'; // Ícones para botões
+import { Link, useLocation } from 'react-router-dom';
+import { ArrowLeft, Save } from 'lucide-react';
 import despesaService from '../../service/despesaService';
 import tipoService from '../../service/tipoService';
-import MessageModal from '../../components/messageModal';
 import InputMoeda from '../../components/InputMoeda';
+
+const INITIAL_STATE = {
+  id: '',
+  descricao: '',
+  valor: '',
+  data: new Date().toISOString().split('T')[0],
+  tipo: null,
+  parcelada: false,
+  numeroParcela: 0,
+  totalParcelas: 0,
+  credito: false,
+};
 
 function Cadastro() {
   const { state } = useLocation();
-  const navigate = useNavigate(); // Hook para navegação programática
   const editando = !!state?.despesa;
   const [tipos, setTipos] = useState([]);
-
-  const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
+  const [banner, setBanner] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+  const [formData, setFormData] = useState(
+    editando
+      ? {
+          id: state.despesa.id || '',
+          descricao: state.despesa.descricao || '',
+          valor: state.despesa.valor || '',
+          data: state.despesa.data || new Date().toISOString().split('T')[0],
+          tipo: state.despesa.tipo ? { id: state.despesa.tipo.id } : null,
+          parcelada: state.despesa.parcelada || false,
+          numeroParcela: state.despesa.numeroParcela || 0,
+          totalParcelas: state.despesa.totalParcelas || 0,
+          credito: state.despesa.credito || false,
+        }
+      : { ...INITIAL_STATE }
+  );
 
   useEffect(() => {
     tipoService.listar()
@@ -20,68 +45,54 @@ function Cadastro() {
       .catch(error => console.error("Erro ao carregar tipos:", error));
   }, []);
 
-  const [formData, setFormData] = useState({
-    id: state?.despesa?.id || '',
-    descricao: state?.despesa?.descricao || '',
-    valor: state?.despesa?.valor || '',
-    data: state?.despesa?.data || new Date().toISOString().split('T')[0],
-    tipo: state?.despesa?.tipo ? { id: state?.despesa.tipo.id } : null,
-    parcelada: state?.despesa?.parcelada || false,
-    numeroParcela: state?.despesa?.numeroParcela || 0,
-    totalParcelas: state?.despesa?.totalParcelas || 0,
-    credito: state?.despesa?.credito || false,
-  });
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
-
     setFormData({ ...formData, [name]: val });
+  };
+
+  const showBanner = (type, message) => {
+    setBanner({ type, message });
+    setTimeout(() => setBanner(null), 3000);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (salvando) return;
+    setSalvando(true);
+
     const dadosParaEnviar = {
       ...formData,
-      valor: parseFloat(formData.valor) // Converte para float antes de enviar
+      valor: parseFloat(formData.valor),
     };
 
     despesaService.salvar(dadosParaEnviar)
       .then(() => {
-        setModal({
-          open: true,
-          type: "success",
-          message: editando ? "As alterações foram salvas." : "Despesa registrada com sucesso!",
-        });
+        showBanner("success", editando ? "As alterações foram salvas." : "Despesa registrada com sucesso!");
+        if (!editando) setFormData({ ...INITIAL_STATE });
       })
       .catch(error => {
-        setModal({
-          open: true,
-          type: "error",
-          message: "Erro ao cadastrar despesa: " + (error.response?.data?.mensagem || error.message),
-        });
+        showBanner("error", "Erro ao cadastrar despesa: " + (error.response?.data?.mensagem || error.message));
         console.error("Detalhes do erro:", error);
-      });
+      })
+      .finally(() => setSalvando(false));
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 text-gray-800">
       <div className="max-w-xl mx-auto">
-        
-        {/* Header da Página de Cadastro */}
+
         <header className="flex justify-center items-center mb-8 bg-white p-6 rounded-xl shadow-sm">
           <h1 className="text-2xl font-bold">
             {editando ? 'Editar Despesa' : 'Nova Despesa'}
           </h1>
-          
         </header>
 
-        {/* Formulário de Cadastro */}
         <div className="bg-white p-8 rounded-xl shadow-sm">
           <form id="form-despesa" onSubmit={handleSubmit}>
             <div className="mb-4">
               <label htmlFor="descricao" className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-              <input type="text" id="descricao" name="descricao" value={formData.descricao} onChange={handleChange} required 
+              <input type="text" id="descricao" name="descricao" value={formData.descricao} onChange={handleChange} required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
             </div>
             <div className="mb-4">
@@ -94,17 +105,17 @@ function Cadastro() {
             </div>
             <div className="mb-6">
               <label htmlFor="data" className="block text-sm font-medium text-gray-700 mb-1">Data</label>
-              <input type="date" id="data" name="data" value={formData.data} onChange={handleChange} required 
+              <input type="date" id="data" name="data" value={formData.data} onChange={handleChange} required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
             </div>
 
             <div className="mb-4">
               <label htmlFor="tipo" className="block text-sm font-medium text-gray-700 mb-1">Tipo da Despesa</label>
-              <select id="tipo" name="tipo" value={formData.tipo?.id || ''} 
+              <select id="tipo" name="tipo" value={formData.tipo?.id || ''}
                 onChange={(e) => setFormData({
-                  ...formData, 
-                  tipo: { id: e.target.value } // Enviando como objeto para o JPA mapear a FK
-                })}  
+                  ...formData,
+                  tipo: e.target.value ? { id: e.target.value } : null,
+                })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 <option value="">Selecione um tipo...</option>
@@ -114,7 +125,6 @@ function Cadastro() {
               </select>
             </div>
 
-            {/* Seção de Parcelamento */}
             <div className="pt-4 border-t border-gray-100">
               <label className="flex items-center gap-3 cursor-pointer group">
                 <input type="checkbox" name="parcelada" checked={formData.parcelada} onChange={handleChange} className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
@@ -147,9 +157,9 @@ function Cadastro() {
                 <Link to="/despesa" className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors">
                   <ArrowLeft size={20}/> Voltar
                 </Link>
-                
-                <button type="submit" form="form-despesa"
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors cursor-pointer"
+
+                <button type="submit" form="form-despesa" disabled={salvando}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save size={20} /> Salvar
                 </button>
@@ -157,15 +167,18 @@ function Cadastro() {
             </div>
           </form>
         </div>
+
+        {banner && (
+          <div className={`p-4 rounded-lg mt-4 border transition-opacity ${
+            banner.type === 'success'
+              ? 'bg-green-100 text-green-800 border-green-300'
+              : 'bg-red-100 text-red-800 border-red-300'
+          }`}>
+            {banner.message}
+          </div>
+        )}
       </div>
-      
-      <MessageModal isOpen={modal.open} type={modal.type}message={modal.message}
-        onClose={() => {
-          setModal({ ...modal, open: false });
-          if (modal.type === 'success') navigate('/despesa');
-        }}
-      />
-    </div>    
+    </div>
   );
 }
 

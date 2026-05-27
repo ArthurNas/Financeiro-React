@@ -1,40 +1,33 @@
 import { useState, useEffect, useContext } from 'react';
-import { useNavigate, Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import usuarioService from '../../service/usuarioService';
 import { AuthContext } from '../../components/AuthContext';
-import MessageModal from '../../components/messageModal';
+
+const INITIAL_STATE = { id: '', nome: '', email: '', senha: '', role: 'USER' };
 
 function CadastroUsuario() {
   const { state } = useLocation();
   const { id } = useParams();
-  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
-  
+  const [banner, setBanner] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+
   const editando = !!state?.usuario || !!id;
-  
-  const [formData, setFormData] = useState({
-    id: state?.usuario?.id || '',
-    nome: state?.usuario?.nome || '',
-    email: state?.usuario?.email || '',
-    senha: '', 
-    role: state?.usuario?.role || 'USER'
-  });
+
+  const [formData, setFormData] = useState({ ...INITIAL_STATE });
 
   useEffect(() => {
     if (state?.usuario) {
       setFormData({ ...state.usuario, senha: '' });
-    } 
-    
-    else if (id) {
+    } else if (id) {
       usuarioService.buscar(id)
         .then(response => {
           setFormData({ ...response.data, senha: '' });
         })
         .catch(err => {
           console.error("Erro ao carregar perfil:", err);
-          alert("Erro ao buscar dados do usuário.");
+          showBanner("error", "Erro ao buscar dados do usuário.");
         });
     }
   }, [id, state]);
@@ -44,31 +37,36 @@ function CadastroUsuario() {
     setFormData({ ...formData, [name]: value });
   };
 
+  const showBanner = (type, message) => {
+    setBanner({ type, message });
+    setTimeout(() => setBanner(null), 3000);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(formData);
-    const acao = editando 
-      ? usuarioService.atualizar(formData.id, formData) 
+    if (salvando) return;
+    setSalvando(true);
+
+    const acao = editando
+      ? usuarioService.atualizar(formData.id, formData)
       : usuarioService.salvar(formData);
 
     acao.then(() => {
-        setModal({
-          open: true,
-          type: "success",
-          message: editando ? "As alterações foram salvas." : "Usuário registrado com sucesso!",
-        });
+        showBanner("success", editando ? "As alterações foram salvas." : "Usuário registrado com sucesso!");
+        if (!editando) setFormData({ ...INITIAL_STATE });
       })
       .catch(error => {
         const mensagemErro = error.response?.data?.mensagem || error.message;
-        alert("Erro ao processar usuário: " + mensagemErro);
+        showBanner("error", "Erro ao processar usuário: " + mensagemErro);
         console.error("Detalhes do erro:", error);
-      });
+      })
+      .finally(() => setSalvando(false));
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 text-gray-800">
       <div className="max-w-xl mx-auto">
-        
+
         <header className="flex justify-center items-center mb-8 bg-white p-6 rounded-xl shadow-sm">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <User className="text-blue-600" />
@@ -78,22 +76,19 @@ function CadastroUsuario() {
 
         <div className="bg-white p-8 rounded-xl shadow-sm">
           <form id="form-usuario" onSubmit={handleSubmit}>
-            
-            {/* Campo Nome */}
+
             <div className="mb-4">
               <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
-              <input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required 
+              <input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"/>
             </div>
 
-            {/* Campo E-mail */}
             <div className="mb-4">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">E-mail (Login)</label>
-              <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required 
+              <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"/>
             </div>
 
-            {/* Campo Senha */}
             <div className="mb-4">
               <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-1">
                 {editando ? 'Nova Senha (deixe vazio para manter)' : 'Senha'}
@@ -102,14 +97,13 @@ function CadastroUsuario() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"/>
             </div>
 
-            {/* Campo Perfil (Role) */}
-            {user?.role === 'ADMIN' && (
+            {user?.role === 'ROLE_ADMIN' && (
               <div className="mb-6">
                 <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
                   Nível de Acesso
                 </label>
-                <select id="role" name="role" value={formData.role} onChange={handleChange} 
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md outline-none bg-white focus:ring-blue-500`}>
+                <select id="role" name="role" value={formData.role} onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md outline-none bg-white focus:ring-blue-500">
                   <option value="USER">Usuário Comum</option>
                   <option value="ADMIN">Administrador</option>
                 </select>
@@ -120,23 +114,26 @@ function CadastroUsuario() {
               <Link to="/usuarios" className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors">
                 <ArrowLeft size={20}/> Voltar
               </Link>
-              
-              <button type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-md shadow-blue-100"
+
+              <button type="submit" disabled={salvando}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-md shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save size={20} /> {editando ? 'Atualizar' : 'Salvar'}
               </button>
             </div>
           </form>
         </div>
-      </div>
 
-      <MessageModal isOpen={modal.open} type={modal.type}message={modal.message}
-        onClose={() => {
-          setModal({ ...modal, open: false });
-          if (modal.type === 'success') navigate(user?.role === 'ADMIN' ? '/usuarios' : '/');
-        }}
-      />
+        {banner && (
+          <div className={`p-4 rounded-lg mt-4 border ${
+            banner.type === 'success'
+              ? 'bg-green-100 text-green-800 border-green-300'
+              : 'bg-red-100 text-red-800 border-red-300'
+          }`}>
+            {banner.message}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
