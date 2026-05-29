@@ -1,8 +1,9 @@
 import { useState, useEffect, useContext } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import usuarioService from '../../service/usuarioService';
 import { AuthContext } from '../../components/AuthContext';
+import MessageModal from '../../components/messageModal';
 
 const INITIAL_STATE = { id: '', nome: '', email: '', senha: '', role: 'USER' };
 
@@ -10,7 +11,9 @@ function CadastroUsuario() {
   const { state } = useLocation();
   const { id } = useParams();
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [banner, setBanner] = useState(null);
+  const [modal, setModal] = useState({ open: false, type: 'error', message: '' });
   const [salvando, setSalvando] = useState(false);
 
   const editando = !!state?.usuario || !!id;
@@ -52,12 +55,19 @@ function CadastroUsuario() {
       : usuarioService.salvar(formData);
 
     acao.then(() => {
-        showBanner("success", editando ? "As alterações foram salvas." : "Usuário registrado com sucesso!");
-        if (!editando) setFormData({ ...INITIAL_STATE });
+        if (editando) {
+          navigate('/usuarios');
+        } else {
+          showBanner("success", "Usuário registrado com sucesso!");
+          setFormData({ ...INITIAL_STATE });
+        }
       })
       .catch(error => {
-        const mensagemErro = error.response?.data?.mensagem || error.message;
-        showBanner("error", "Erro ao processar usuário: " + mensagemErro);
+        setModal({
+          open: true,
+          type: "error",
+          message: "Erro ao processar usuário: " + (error.response?.data?.mensagem || error.message),
+        });
         console.error("Detalhes do erro:", error);
       })
       .finally(() => setSalvando(false));
@@ -124,16 +134,16 @@ function CadastroUsuario() {
           </form>
         </div>
 
-        {banner && (
-          <div className={`p-4 rounded-lg mt-4 border ${
-            banner.type === 'success'
-              ? 'bg-green-100 text-green-800 border-green-300'
-              : 'bg-red-100 text-red-800 border-red-300'
-          }`}>
+        {banner && banner.type === 'success' && (
+          <div className="p-4 rounded-lg mt-4 border bg-green-100 text-green-800 border-green-300">
             {banner.message}
           </div>
         )}
       </div>
+
+      <MessageModal isOpen={modal.open} type={modal.type} message={modal.message}
+        onClose={() => setModal({ ...modal, open: false })}
+      />
     </div>
   );
 }

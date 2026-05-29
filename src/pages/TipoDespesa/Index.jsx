@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import tipoService from '../../service/tipoService';
-import { Plus, Trash2, Wallet, Search } from 'lucide-react';
+import { Plus, Trash2, Wallet, Search, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -94,6 +94,7 @@ function TipoDespesa() {
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="p-4 font-semibold text-sm text-gray-600">Descrição</th>
+                <th className="p-4 font-semibold text-sm text-gray-600 text-center">Aporte</th>
                 <th className="p-4 font-semibold text-sm text-gray-600 text-end">Ações</th>
               </tr>
             </thead>
@@ -101,6 +102,15 @@ function TipoDespesa() {
               {tipos.map((t) => (
                 <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="p-4 text-sm">{t.descricao}</td>
+                  <td className="p-4 text-center">
+                    {t.isAporte ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">
+                        <TrendingUp size={14} /> Aporte
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </td>
                   <td className="p-4 text-center flex justify-end gap-2">
                     <button onClick={() => navigate('/cadastroTipo', { state: { tipo: t } })}
                       className="text-gray-400 hover:text-blue-600 transition-colors p-1">

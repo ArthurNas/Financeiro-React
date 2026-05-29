@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import orcamentoService from '../../service/orcamentoService';
 import tipoService from '../../service/tipoService';
+import MessageModal from '../../components/messageModal';
 
 const MESES = [
   { value: 1, label: 'Janeiro' },
@@ -24,17 +25,20 @@ const ANOS = Array.from({ length: 5 }, (_, i) => ANO_ATUAL + i);
 
 function CadastroOrcamento() {
   const { state } = useLocation();
+  const navigate = useNavigate();
   const editando = !!state?.orcamento;
   const orcamentoEdit = state?.orcamento;
 
   const [tipos, setTipos] = useState([]);
   const [banner, setBanner] = useState(null);
+  const [modal, setModal] = useState({ open: false, type: 'error', message: '' });
   const [salvando, setSalvando] = useState(false);
 
   const [formData, setFormData] = useState(
     editando ? {
       id: orcamentoEdit.id,
       rendaEstimada: orcamentoEdit.rendaEstimada,
+      usarProventos: orcamentoEdit.usarProventos ?? false,
       mesInicio: orcamentoEdit.mesInicio,
       anoInicio: orcamentoEdit.anoInicio,
       mesFim: orcamentoEdit.mesFim,
@@ -47,6 +51,7 @@ function CadastroOrcamento() {
     } : {
       id: null,
       rendaEstimada: '',
+      usarProventos: false,
       mesInicio: new Date().getMonth() + 1,
       anoInicio: ANO_ATUAL,
       mesFim: 12,
@@ -67,8 +72,8 @@ function CadastroOrcamento() {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handlePilarChange = (index, field, value) => {
@@ -125,6 +130,7 @@ function CadastroOrcamento() {
 
     const dados = {
       rendaEstimada: parseFloat(formData.rendaEstimada),
+      usarProventos: formData.usarProventos,
       mesInicio: formData.mesInicio,
       anoInicio: formData.anoInicio,
       mesFim: formData.mesFim,
@@ -142,11 +148,19 @@ function CadastroOrcamento() {
 
     request
       .then(() => {
-        showBanner('success', editando ? 'Orçamento atualizado com sucesso!' : 'Orçamento salvo com sucesso!');
-        if (!editando) setFormData(prev => ({ ...prev, pilares: [] }));
+        if (editando){
+          navigate('/orcamento');
+        } else{
+          showBanner('success', 'Orçamento salvo com sucesso!');
+          setFormData(prev => ({ ...prev, pilares: [] }));
+        }
       })
       .catch(error => {
-        showBanner('error', 'Erro ao salvar orçamento: ' + (error.response?.data || error.message));
+        setModal({
+          open: true,
+          type: "error",
+          message: (error.response?.data || error.message),
+        });
       })
       .finally(() => setSalvando(false));
   };
@@ -166,8 +180,19 @@ function CadastroOrcamento() {
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">Renda Estimada</label>
-              <input type="number" step="0.01" name="rendaEstimada" value={formData.rendaEstimada} onChange={handleChange} required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+              <div className="flex gap-3 items-start">
+                <input type="number" step="0.01" name="rendaEstimada" value={formData.rendaEstimada} onChange={handleChange} required
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                <label className="inline-flex items-center gap-2 cursor-pointer mt-2 shrink-0">
+                  <div className="relative">
+                    <input type="checkbox" name="usarProventos" checked={formData.usarProventos} onChange={handleChange}
+                      className="sr-only peer" />
+                    <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-blue-500 peer-focus:ring-2 peer-focus:ring-blue-300 transition-colors"></div>
+                    <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform"></div>
+                  </div>
+                  <span className="text-xs text-gray-600 whitespace-nowrap">Usar valor dos proventos</span>
+                </label>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -296,16 +321,16 @@ function CadastroOrcamento() {
           </form>
         </div>
 
-        {banner && (
-          <div className={`p-4 rounded-lg mt-4 border transition-opacity ${
-            banner.type === 'success'
-              ? 'bg-green-100 text-green-800 border-green-300'
-              : 'bg-red-100 text-red-800 border-red-300'
-          }`}>
+        {banner && banner.type === 'success' && (
+          <div className="p-4 rounded-lg mt-4 border bg-green-100 text-green-800 border-green-300">
             {banner.message}
           </div>
         )}
       </div>
+
+      <MessageModal isOpen={modal.open} type={modal.type} message={modal.message}
+        onClose={() => setModal({ ...modal, open: false })}
+      />
     </div>
   );
 }
