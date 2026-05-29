@@ -1,9 +1,10 @@
 import { useState, useEffect, useContext } from 'react';
-import { useNavigate, Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import usuarioService from '../../service/usuarioService';
 import { AuthContext } from '../../components/AuthContext';
-import MessageModal from '../../components/messageModal';
+
+const INITIAL_STATE = { id: '', nome: '', email: '', senha: '', role: 'USER' };
 
 const INITIAL_STATE = { id: '', nome: '', email: '', senha: '', role: 'USER' };
 

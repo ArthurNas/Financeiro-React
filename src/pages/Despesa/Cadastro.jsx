@@ -18,6 +18,18 @@ const INITIAL_STATE = {
   credito: false,
 };
 
+const INITIAL_STATE = {
+  id: '',
+  descricao: '',
+  valor: '',
+  data: new Date().toISOString().split('T')[0],
+  tipo: null,
+  parcelada: false,
+  numeroParcela: 0,
+  totalParcelas: 0,
+  credito: false,
+};
+
 function Cadastro() {
   const { state } = useLocation();
   const navigate = useNavigate();

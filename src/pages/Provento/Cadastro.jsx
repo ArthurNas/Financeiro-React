@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import proventoService from '../../service/proventoService';
 import InputMoeda from '../../components/InputMoeda';
 import MessageModal from '../../components/messageModal';
+
+const INITIAL_STATE = {
+  id: '',
+  descricao: '',
+  valor: '',
+  data: new Date().toISOString().split('T')[0],
+};
 
 const INITIAL_STATE = {
   id: '',

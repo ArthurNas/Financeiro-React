@@ -6,9 +6,10 @@ import MessageModal from '../../components/messageModal';
 
 const INITIAL_STATE = { id: '', descricao: '', isAporte: false };
 
+const INITIAL_STATE = { id: '', descricao: '' };
+
 function CadastroTipo() {
   const { state } = useLocation();
-  const navigate = useNavigate();
   const editando = !!state?.tipo;
   const [banner, setBanner] = useState(null);
   const [modal, setModal] = useState({ open: false, type: 'error', message: '' });
@@ -22,6 +23,11 @@ function CadastroTipo() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+  };
+
+  const showBanner = (type, message) => {
+    setBanner({ type, message });
+    setTimeout(() => setBanner(null), 3000);
   };
 
   const showBanner = (type, message) => {
