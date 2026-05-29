@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { ArrowLeft, Save, TrendingUp } from 'lucide-react';
 import tipoService from '../../service/tipoService';
+import MessageModal from '../../components/messageModal';
+
+const INITIAL_STATE = { id: '', descricao: '', isAporte: false };
 
 const INITIAL_STATE = { id: '', descricao: '' };
 
@@ -9,16 +12,22 @@ function CadastroTipo() {
   const { state } = useLocation();
   const editando = !!state?.tipo;
   const [banner, setBanner] = useState(null);
+  const [modal, setModal] = useState({ open: false, type: 'error', message: '' });
   const [salvando, setSalvando] = useState(false);
   const [formData, setFormData] = useState(
     editando
-      ? { id: state.tipo.id || '', descricao: state.tipo.descricao || '' }
+      ? { id: state.tipo.id || '', descricao: state.tipo.descricao || '', isAporte: state.tipo.isAporte ?? false }
       : { ...INITIAL_STATE }
   );
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type, checked } = e.target;
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+  };
+
+  const showBanner = (type, message) => {
+    setBanner({ type, message });
+    setTimeout(() => setBanner(null), 3000);
   };
 
   const showBanner = (type, message) => {
@@ -33,11 +42,19 @@ function CadastroTipo() {
 
     tipoService.salvar(formData)
       .then(() => {
-        showBanner("success", editando ? "As alterações foram salvas." : "Tipo registrado com sucesso!");
-        if (!editando) setFormData({ ...INITIAL_STATE });
+        if (editando){
+          navigate('/tipo');
+        } else{
+          showBanner("success", "Tipo registrado com sucesso!");
+          setFormData({ ...INITIAL_STATE });
+        }
       })
       .catch(error => {
-        showBanner("error", "Erro ao cadastrar tipo: " + (error.response?.data?.mensagem || error.message));
+        setModal({
+          open: true,
+          type: "error",
+          message: (error.response?.data || error.message),
+        });
         console.error("Detalhes do erro:", error);
       })
       .finally(() => setSalvando(false));
@@ -60,6 +77,22 @@ function CadastroTipo() {
               <input type="text" id="descricao" name="descricao" value={formData.descricao} onChange={handleChange} required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
             </div>
+
+            <div className="mb-6">
+              <label className="inline-flex items-center gap-3 cursor-pointer">
+                <div className="relative">
+                  <input type="checkbox" name="isAporte" checked={formData.isAporte} onChange={handleChange}
+                    className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-green-500 peer-focus:ring-2 peer-focus:ring-green-300 transition-colors"></div>
+                  <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform"></div>
+                </div>
+                <span className="text-sm text-gray-700 flex items-center gap-1.5">
+                  <TrendingUp size={16} className="text-green-600" />
+                  Esta categoria representa um investimento/aporte?
+                </span>
+              </label>
+            </div>
+
             <div className="flex justify-end gap-2">
               <Link to="/tipo" className="flex items-center gap-2 bg-gray-300 px-4 py-2 rounded-lg">
                 <ArrowLeft size={20}/> Voltar
@@ -74,16 +107,16 @@ function CadastroTipo() {
           </form>
         </div>
 
-        {banner && (
-          <div className={`p-4 rounded-lg mt-4 border ${
-            banner.type === 'success'
-              ? 'bg-green-100 text-green-800 border-green-300'
-              : 'bg-red-100 text-red-800 border-red-300'
-          }`}>
+        {banner && banner.type === 'success' && (
+          <div className="p-4 rounded-lg mt-4 border bg-green-100 text-green-800 border-green-300">
             {banner.message}
           </div>
         )}
       </div>
+
+      <MessageModal isOpen={modal.open} type={modal.type} message={modal.message}
+        onClose={() => setModal({ ...modal, open: false })}
+      />
     </div>
   );
 }

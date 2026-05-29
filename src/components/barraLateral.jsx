@@ -49,6 +49,11 @@ export function BarraLateral() {
             }`}>
             Proventos
           </SidebarItem>
+          <SidebarItem as={Link} to="/orcamento" icon={HiChartBar} className={`transition-all duration-200 ${
+              isSelected("/orcamento") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
+            }`}>
+            Orçamento
+          </SidebarItem>
         </SidebarItemGroup>
 
         <SidebarItemGroup className="mt-auto border-t border-gray-100 pt-4">

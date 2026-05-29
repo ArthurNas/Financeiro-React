@@ -1,9 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import despesaService from '../../service/despesaService';
 import tipoService from '../../service/tipoService';
 import InputMoeda from '../../components/InputMoeda';
+import MessageModal from '../../components/messageModal';
+
+const INITIAL_STATE = {
+  id: '',
+  descricao: '',
+  valor: '',
+  data: new Date().toISOString().split('T')[0],
+  tipo: null,
+  parcelada: false,
+  numeroParcela: 0,
+  totalParcelas: 0,
+  credito: false,
+};
 
 const INITIAL_STATE = {
   id: '',
@@ -19,9 +32,11 @@ const INITIAL_STATE = {
 
 function Cadastro() {
   const { state } = useLocation();
+  const navigate = useNavigate();
   const editando = !!state?.despesa;
   const [tipos, setTipos] = useState([]);
   const [banner, setBanner] = useState(null);
+  const [modal, setModal] = useState({ open: false, type: 'error', message: '' });
   const [salvando, setSalvando] = useState(false);
   const [formData, setFormData] = useState(
     editando
@@ -68,11 +83,20 @@ function Cadastro() {
 
     despesaService.salvar(dadosParaEnviar)
       .then(() => {
-        showBanner("success", editando ? "As alterações foram salvas." : "Despesa registrada com sucesso!");
-        if (!editando) setFormData({ ...INITIAL_STATE });
+        if (editando){
+          navigate('/despesa');
+        } else{
+          showBanner("success", "Despesa registrada com sucesso!");
+          setFormData({ ...INITIAL_STATE });
+        }
+        
       })
       .catch(error => {
-        showBanner("error", "Erro ao cadastrar despesa: " + (error.response?.data?.mensagem || error.message));
+        setModal({
+          open: true,
+          type: "error",
+          message: (error.response?.data || error.message),
+        });
         console.error("Detalhes do erro:", error);
       })
       .finally(() => setSalvando(false));
@@ -168,16 +192,16 @@ function Cadastro() {
           </form>
         </div>
 
-        {banner && (
-          <div className={`p-4 rounded-lg mt-4 border transition-opacity ${
-            banner.type === 'success'
-              ? 'bg-green-100 text-green-800 border-green-300'
-              : 'bg-red-100 text-red-800 border-red-300'
-          }`}>
+        {banner && banner.type === 'success' && (
+          <div className="p-4 rounded-lg mt-4 border bg-green-100 text-green-800 border-green-300">
             {banner.message}
           </div>
         )}
       </div>
+
+      <MessageModal isOpen={modal.open} type={modal.type} message={modal.message}
+        onClose={() => setModal({ ...modal, open: false })}
+      />
     </div>
   );
 }

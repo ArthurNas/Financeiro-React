@@ -3,6 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import proventoService from '../../service/proventoService';
 import InputMoeda from '../../components/InputMoeda';
+import MessageModal from '../../components/messageModal';
+
+const INITIAL_STATE = {
+  id: '',
+  descricao: '',
+  valor: '',
+  data: new Date().toISOString().split('T')[0],
+};
 
 const INITIAL_STATE = {
   id: '',
@@ -13,9 +21,11 @@ const INITIAL_STATE = {
 
 function CadastroProvento() {
   const { state } = useLocation();
+  const navigate = useNavigate();
   const editando = !!state?.provento;
   const [salvando, setSalvando] = useState(false);
   const [banner, setBanner] = useState(null);
+  const [modal, setModal] = useState({ open: false, type: 'error', message: '' });
   const [formData, setFormData] = useState(
     editando
       ? {
@@ -50,10 +60,19 @@ function CadastroProvento() {
 
     try {
       await proventoService.salvar(dadosParaEnviar);
-      showBanner("success", editando ? "As alterações foram salvas." : "Provento registrado com sucesso!");
-      if (!editando) setFormData({ ...INITIAL_STATE });
+      
+      if (editando){
+        navigate('/provento');
+      } else{
+        showBanner("success", "Provento registrado com sucesso!");
+        setFormData({ ...INITIAL_STATE });
+      }
     } catch (error) {
-      showBanner("error", "Erro ao cadastrar provento: " + (error.response?.data?.mensagem || error.message));
+      setModal({
+        open: true,
+        type: "error",
+        message: (error.response?.data || error.message),
+      });
       console.error("Detalhes do erro:", error);
     } finally {
       setSalvando(false);
@@ -105,16 +124,16 @@ function CadastroProvento() {
           </form>
         </div>
 
-        {banner && (
-          <div className={`p-4 rounded-lg mt-4 border ${
-            banner.type === 'success'
-              ? 'bg-green-100 text-green-800 border-green-300'
-              : 'bg-red-100 text-red-800 border-red-300'
-          }`}>
+        {banner && banner.type === 'success' && (
+          <div className="p-4 rounded-lg mt-4 border bg-green-100 text-green-800 border-green-300">
             {banner.message}
           </div>
         )}
       </div>
+
+      <MessageModal isOpen={modal.open} type={modal.type} message={modal.message}
+        onClose={() => setModal({ ...modal, open: false })}
+      />
     </div>
   );
 }

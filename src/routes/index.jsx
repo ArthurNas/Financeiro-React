@@ -12,6 +12,8 @@ import ConsultaUsuarios from '../pages/Usuarios/Index';
 import CadastroUsuario from '../pages/Usuarios/Cadastro';
 import Provento from '../pages/Provento/Index';
 import CadastroProvento from '../pages/Provento/Cadastro';
+import Orcamento from '../pages/Orcamento/Index';
+import CadastroOrcamento from '../pages/Orcamento/Cadastro';
 import DashboardAnual from '../pages/DashboardAnual/Index';
 import AcessoNegado from '../pages/AcessoNegado/Index';
 
@@ -35,6 +37,8 @@ function App() {
                   <Route path="/cadastroTipo" element={<CadastroTipo />} />
                   <Route path="/provento" element={<Provento />} />
                   <Route path="/cadastroProvento" element={<CadastroProvento />} />
+                  <Route path="/orcamento" element={<Orcamento />} />
+                  <Route path="/cadastroOrcamento" element={<CadastroOrcamento />} />
 
                   <Route
                     path="/usuarios"

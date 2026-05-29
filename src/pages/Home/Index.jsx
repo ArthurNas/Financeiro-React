@@ -3,6 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { TrendingUp, DollarSign, AlertCircle, PieChart as PieChartIcon, ArrowUp, ArrowDown } from 'lucide-react';
 import despesaService from '../../service/despesaService';
 import proventoService from '../../service/proventoService';
+import ResumoOrcamentoWidget from '../../components/ResumoOrcamentoWidget';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
@@ -219,6 +220,10 @@ const Home = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="mb-6">
+            <ResumoOrcamentoWidget mes={filtro.mes} ano={filtro.ano} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
