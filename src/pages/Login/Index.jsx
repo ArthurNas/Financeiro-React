@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { Wallet, Lock, Mail, Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import usuarioService from '../../service/usuarioService';
 import MessageModal from '../../components/messageModal';
 import { useAuth } from '../../components/AuthContext';
@@ -11,6 +11,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,6 +20,7 @@ export default function Login() {
 
   const handleLogin = (e) => {
     e.preventDefault();
+    setLoading(true);
     
     usuarioService.login({ 
         email: credentials.email, 
@@ -36,7 +38,8 @@ export default function Login() {
           type: 'error', 
           message: 'Email ou senha inválidos.' 
         });
-    });
+    })
+    .finally(() => setLoading(false));
   };
 
   return (
@@ -105,10 +108,10 @@ export default function Login() {
           </div>*/}
 
           <div>
-            <button type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-lg shadow-blue-100"
+            <button type="submit" disabled={loading}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-lg shadow-blue-100 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Entrar
+              {loading ? <LoaderCircle className="animate-spin h-5 w-5" /> : 'Entrar'}
             </button>
           </div>
         </form>

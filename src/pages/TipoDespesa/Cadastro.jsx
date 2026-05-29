@@ -8,6 +8,7 @@ const INITIAL_STATE = { id: '', descricao: '', isAporte: false };
 
 function CadastroTipo() {
   const { state } = useLocation();
+  const navigate = useNavigate();
   const editando = !!state?.tipo;
   const [banner, setBanner] = useState(null);
   const [modal, setModal] = useState({ open: false, type: 'error', message: '' });

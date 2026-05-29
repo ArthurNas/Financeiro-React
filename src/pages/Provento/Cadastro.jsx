@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import proventoService from '../../service/proventoService';
 import InputMoeda from '../../components/InputMoeda';

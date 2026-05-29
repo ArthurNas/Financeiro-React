@@ -173,6 +173,7 @@ function Despesa() {
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="p-4 font-semibold text-sm text-gray-600">Descrição</th>
+                <th className="p-4 font-semibold text-sm text-gray-600">Tipo</th>
                 <th className="p-4 font-semibold text-sm text-gray-600">Valor</th>
                 <th className="p-4 font-semibold text-sm text-gray-600">Data</th>
                 <th className="p-4 font-semibold text-sm text-gray-600">Parcela</th>
@@ -183,6 +184,9 @@ function Despesa() {
               {despesas.map((d) => (
                 <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="p-4 text-sm">{d.descricao}</td>
+                  <td className="p-4 text-sm text-gray-500">
+                    {d.tipo?.descricao || <span className="text-gray-300 italic">Sem tipo</span>}
+                  </td>
                   <td className="p-4 text-sm font-medium text-red-600">
                     R$ {d.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
