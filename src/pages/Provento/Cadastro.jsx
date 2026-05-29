@@ -12,13 +12,6 @@ const INITIAL_STATE = {
   data: new Date().toISOString().split('T')[0],
 };
 
-const INITIAL_STATE = {
-  id: '',
-  descricao: '',
-  valor: '',
-  data: new Date().toISOString().split('T')[0],
-};
-
 function CadastroProvento() {
   const { state } = useLocation();
   const navigate = useNavigate();

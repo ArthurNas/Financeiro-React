@@ -6,8 +6,6 @@ import { AuthContext } from '../../components/AuthContext';
 
 const INITIAL_STATE = { id: '', nome: '', email: '', senha: '', role: 'USER' };
 
-const INITIAL_STATE = { id: '', nome: '', email: '', senha: '', role: 'USER' };
-
 function CadastroUsuario() {
   const { state } = useLocation();
   const { id } = useParams();
