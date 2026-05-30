@@ -56,13 +56,7 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
-                  <Route
-                    path="/usuarios/editar/:id"
-                    element={
-                      <ProtectedRoute requiredRole="ADMIN">
-                        <CadastroUsuario />
-                      </ProtectedRoute>
-                    }
+                  <Route path="/usuarios/editar/:id" element={<CadastroUsuario />}
                   />
                 </Routes>
               </MainLayout>

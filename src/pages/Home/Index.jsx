@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
-import { TrendingUp, DollarSign, AlertCircle, PieChart as PieChartIcon, ArrowUp, ArrowDown } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { TrendingUp, DollarSign, Target, ArrowUp, ArrowDown } from 'lucide-react';
 import despesaService from '../../service/despesaService';
 import proventoService from '../../service/proventoService';
 import ResumoOrcamentoWidget from '../../components/ResumoOrcamentoWidget';
@@ -52,21 +52,20 @@ const Home = () => {
       acc[nomeTipo] = (acc[nomeTipo] || 0) + d.valor;
       return acc;
     }, {});
-    return Object.keys(grupos).map((key, index) => ({ 
-      name: key, 
-      value: grupos[key],
-      color: COLORS[index % COLORS.length]
-    }));
+    return Object.keys(grupos)
+      .map(key => ({ name: key, valor: grupos[key] }))
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 10);
   }, [despesas]);
 
-  const dadosTop5 = useMemo(() => {
+  const dadosTop10 = useMemo(() => {
     const grupos = despesas.reduce((acc, d) => {
-      const nomeTipo = d.descricao;
-      if (!acc[nomeTipo]) {
-        acc[nomeTipo] = { total: 0, count: 0 };
+      const nome = d.descricao;
+      if (!acc[nome]) {
+        acc[nome] = { total: 0, count: 0 };
       }
-      acc[nomeTipo].total += d.valor;
-      acc[nomeTipo].count += 1;
+      acc[nome].total += d.valor;
+      acc[nome].count += 1;
       return acc;
     }, {});
     
@@ -77,7 +76,7 @@ const Home = () => {
         count: grupos[key].count
       }))
       .sort((a, b) => b.valor - a.valor)
-      .slice(0, 5);
+      .slice(0, 10);
   }, [despesas]);
 
   const nomeMes = useMemo(() => {
@@ -105,7 +104,7 @@ const Home = () => {
 
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-3 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-100 rounded-lg">
             <TrendingUp className="text-blue-600" size={24} />
@@ -160,7 +159,7 @@ const Home = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
             <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
@@ -222,60 +221,21 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="mb-6">
-            <ResumoOrcamentoWidget mes={filtro.mes} ano={filtro.ano} />
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h2 className="text-sm font-semibold text-gray-500 uppercase mb-4">
-                Gastos por Tipo
+                Top 10 Gastos por Tipo
               </h2>
               
               {dadosPorTipo.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie 
-                      data={dadosPorTipo} 
-                      innerRadius={60} 
-                      outerRadius={100} 
-                      paddingAngle={3} 
-                      dataKey="value"
-                    >
-                      {dadosPorTipo.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend 
-                      verticalAlign="bottom" 
-                      height={36} 
-                      iconType="circle"
-                      formatter={(value) => <span className="text-gray-600 text-sm">{value}</span>}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-gray-400">
-                  Nenhum dado para exibir
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase mb-4">
-                Top 5 Maiores Gastos
-              </h2>
-              
-              {dadosTop5.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dadosTop5} layout="vertical" margin={{ left: 20 }}>
+                  <BarChart data={dadosPorTipo} layout="vertical" margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                     <XAxis type="number" hide />
                     <YAxis 
                       dataKey="name" 
                       type="category" 
-                      width={120} 
+                      width={130} 
                       fontSize={12}
                       tickLine={false}
                     />
@@ -284,15 +244,7 @@ const Home = () => {
                       dataKey="valor" 
                       fill="#3B82F6" 
                       radius={[0, 4, 4, 0]} 
-                      barSize={24}
-                      label={{ 
-                        position: 'right', 
-                        fontSize: 12, 
-                        fill: '#6B7280',
-                        formatter: (value, entry) => {
-                          return entry?.count ? `${entry.count}x` : '';
-                        }
-                      }}
+                      barSize={20}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -302,12 +254,16 @@ const Home = () => {
                 </div>
               )}
             </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <ResumoOrcamentoWidget mes={filtro.mes} ano={filtro.ano} />
+            </div>
           </div>
 
-          {dadosTop5.length > 0 && (
-            <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          {dadosTop10.length > 0 && (
+            <div className="mt-3 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-4 border-b border-gray-100">
-                <h2 className="text-sm font-semibold text-gray-500 uppercase">Resumo das Maiores Despesas</h2>
+                <h2 className="text-sm font-semibold text-gray-500 uppercase">Top 10 Despesas</h2>
               </div>
               <table className="w-full text-left">
                 <thead className="bg-gray-50 border-b border-gray-100">
@@ -319,7 +275,7 @@ const Home = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {dadosTop5.map((d, index) => (
+                  {dadosTop10.map((d, index) => (
                     <tr key={index} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                       <td className="p-4 text-gray-400 text-sm">{index + 1}</td>
                       <td className="p-4 text-sm font-medium text-gray-800">{d.name}</td>
@@ -334,7 +290,7 @@ const Home = () => {
                   <tr>
                     <td colSpan="3" className="p-4 font-semibold text-gray-700 text-right">Total:</td>
                     <td className="p-4 font-bold text-red-600">
-                      R$ {dadosTop5.reduce((acc, d) => acc + d.valor, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {dadosTop10.reduce((acc, d) => acc + d.valor, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </tfoot>

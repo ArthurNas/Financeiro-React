@@ -1,8 +1,9 @@
 import { useState, useEffect, useContext } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import usuarioService from '../../service/usuarioService';
 import { AuthContext } from '../../components/AuthContext';
+import MessageModal from '../../components/messageModal';
 
 const INITIAL_STATE = { id: '', nome: '', email: '', senha: '', role: 'USER' };
 
@@ -55,7 +56,7 @@ function CadastroUsuario() {
 
     acao.then(() => {
         if (editando) {
-          navigate('/usuarios');
+          navigate(user?.role === 'ROLE_ADMIN' ? '/usuarios' : '/');
         } else {
           showBanner("success", "Usuário registrado com sucesso!");
           setFormData({ ...INITIAL_STATE });
@@ -65,7 +66,7 @@ function CadastroUsuario() {
         setModal({
           open: true,
           type: "error",
-          message: "Erro ao processar usuário: " + (error.response?.data?.mensagem || error.message),
+          message: (error.response?.data || error.message),
         });
         console.error("Detalhes do erro:", error);
       })
@@ -120,7 +121,7 @@ function CadastroUsuario() {
             )}
 
             <div className="flex justify-end gap-2 pt-6">
-              <Link to="/usuarios" className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors">
+              <Link to={user?.role === 'ROLE_ADMIN' ? '/usuarios' : '/'} className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors">
                 <ArrowLeft size={20}/> Voltar
               </Link>
 
