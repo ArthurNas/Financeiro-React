@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import despesaService from '../../service/despesaService';
 import proventoService from '../../service/proventoService';
+import tipoService from '../../service/tipoService';
 import { Plus, Trash2, Wallet, Search, Edit2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +10,7 @@ import ConfirmModal from '../../components/confirmModal';
 function Despesa() {
     const [despesas, setDespesas] = useState([])
     const [proventos, setProventos] = useState([])
+    const [tipos, setTipos] = useState([])
     const navigate = useNavigate();
     const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
 
@@ -16,10 +18,15 @@ function Despesa() {
     const [filtroMes, setFiltroMes] = useState(String(dataAtual.getMonth() + 1).padStart(2, '0'))
     const [filtroAno, setFiltroAno] = useState(String(dataAtual.getFullYear()))
     const [filtroDescricao, setFiltroDescricao] = useState('')
+    const [filtroTipoId, setFiltroTipoId] = useState('')
+
+    useEffect(() => {
+      tipoService.listar().then(res => setTipos(res.data)).catch(() => {});
+    }, []);
 
     const buscarDados = async () => {
       try {
-        const params = { descricao: filtroDescricao, mes: filtroMes, ano: filtroAno };
+        const params = { descricao: filtroDescricao, mes: filtroMes, ano: filtroAno, tipoId: filtroTipoId || undefined };
 
         const [resDespesas, resProventos] = await Promise.all([
             despesaService.listar(params),
@@ -35,7 +42,7 @@ function Despesa() {
 
     useEffect(() => {
         buscarDados();
-    }, [filtroDescricao, filtroMes, filtroAno]);
+    }, [filtroDescricao, filtroMes, filtroAno, filtroTipoId]);
 
     // Esta função agora apenas abre o modal e guarda o ID
     const handleAbrirConfirmacao = (id) => {
@@ -126,6 +133,20 @@ function Despesa() {
             </div>
           </div>
 
+          <div className="w-48">
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-2 ml-1">Tipo</label>
+            <select
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+              value={filtroTipoId}
+              onChange={(e) => setFiltroTipoId(e.target.value)}
+            >
+              <option value="">Todos</option>
+              {tipos.map(t => (
+                <option key={t.id} value={t.id}>{t.descricao}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="w-40">
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-2 ml-1">Mês</label>
             <select 
@@ -160,7 +181,7 @@ function Despesa() {
           </div>
 
           <button 
-            onClick={() => { setFiltroDescricao(''); setFiltroMes(''); setFiltroAno(''); }}
+            onClick={() => { setFiltroDescricao(''); setFiltroMes(''); setFiltroAno(''); setFiltroTipoId(''); }}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium mb-3"
           >
             Limpar
