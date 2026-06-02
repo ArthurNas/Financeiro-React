@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { Sidebar, SidebarItem, SidebarItemGroup, SidebarItems } from "flowbite-react";
-import { HiLogout, HiTable, HiChartPie, HiTag, HiUserCircle, HiUsers, HiTrendingUp, HiChartBar } from "react-icons/hi";
+import { HiLogout, HiTable, HiChartPie, HiTag, HiUserCircle, HiUsers, HiTrendingUp, HiChartBar, HiCash } from "react-icons/hi";
 import { Link, useLocation } from "react-router-dom";
 import { AuthContext } from './AuthContext';
 
@@ -53,6 +53,11 @@ export function BarraLateral() {
               isSelected("/orcamento") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
             }`}>
             Orçamento
+          </SidebarItem>
+          <SidebarItem as={Link} to="/aporte" icon={HiCash} className={`transition-all duration-200 ${
+              isSelected("/aporte") ? "bg-blue-50 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"
+            }`}>
+            Aportes
           </SidebarItem>
         </SidebarItemGroup>
 
