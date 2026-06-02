@@ -1,19 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import aporteService from '../../service/aporteService';
+import objetivoService from '../../service/objetivoService';
 import {
   Trash2, TrendingUp, PiggyBank, Building2, Home, HelpCircle,
-  X, Save, Calculator
+  X, Save, Calculator, Wallet, Plus, Target
 } from 'lucide-react';
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
-} from 'recharts';
 import ConfirmModal from '../../components/confirmModal';
-
-const TICKER_COLORS = [
-  '#3B82F6', '#22C55E', '#F59E0B', '#8B5CF6', '#EF4444',
-  '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16',
-  '#06B6D4', '#D946EF', '#0EA5E9', '#10B981', '#EAB308',
-];
 
 const CATEGORY_ICONS = {
   'Ações': Building2,
@@ -32,7 +24,13 @@ function EditModal({ aporte, onClose, onSave }) {
   const [ticker, setTicker] = useState(aporte.ticker || '');
   const [quantidade, setQuantidade] = useState(aporte.quantidade != null ? String(aporte.quantidade) : '');
   const [precoUnitario, setPrecoUnitario] = useState(aporte.precoUnitario != null ? String(aporte.precoUnitario) : '');
+  const [objetivoId, setObjetivoId] = useState(aporte.objetivoId || '');
+  const [objetivos, setObjetivos] = useState([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    objetivoService.listarAtivos().then(r => setObjetivos(r.data || [])).catch(() => {});
+  }, []);
 
   const qtdNum = parseFloat(quantidade) || 0;
   const precoNum = parseFloat(precoUnitario) || 0;
@@ -50,6 +48,7 @@ function EditModal({ aporte, onClose, onSave }) {
         quantidade: quantidade ? parseFloat(quantidade) : null,
         precoUnitario: precoUnitario ? parseFloat(precoUnitario) : null,
         custosOperacionais: null,
+        objetivoId: objetivoId || null,
       };
       await aporteService.atualizar(aporte.id, payload);
       onSave();
@@ -62,15 +61,18 @@ function EditModal({ aporte, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in duration-200">
+      {/* CORREÇÃO: max-h e flex-col para controlar o layout interno */}
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[calc(100vh-2rem)] flex flex-col relative animate-in zoom-in duration-200">
+        
         <button onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer z-10">
           <X size={20} />
         </button>
 
-        <h2 className="text-lg font-bold text-gray-800 mb-5">Editar Aporte</h2>
+        {/* CORREÇÃO: Container com scroll apenas no conteúdo do form */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+          <h2 className="text-lg font-bold text-gray-800 mb-1">Editar Aporte</h2>
 
-        <div className="space-y-4 mb-6">
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Descrição</label>
             <p className="text-sm font-medium text-gray-800">{aporte.descricao}</p>
@@ -131,6 +133,105 @@ function EditModal({ aporte, onClose, onSave }) {
               )}
             </div>
           </div>
+
+          <div className="border-t border-gray-100 pt-4">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3 flex items-center gap-1.5">
+              <Target size={14} /> Objetivo
+            </h3>
+            <select value={objetivoId} onChange={e => setObjetivoId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+              <option value="">Sem objetivo</option>
+              {objetivos.map(obj => (
+                <option key={obj.id} value={obj.id}>{obj.nome}</option>
+              ))}
+            </select>
+          </div>
+        </div> {/* CORREÇÃO: Tag duplicada removida d daqui */}
+
+        {/* CORREÇÃO: Rodapé fixo para os botões com borda sutil */}
+        <div className="p-6 bg-gray-50 rounded-b-xl border-t border-gray-100 flex gap-3">
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-all cursor-pointer">
+            Cancelar
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <Save size={18} /> {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function ConsumirModal({ objetivo, onClose, onConsumir }) {
+  const [valor, setValor] = useState('');
+  const [justificativa, setJustificativa] = useState('');
+  const [marcarConcluido, setMarcarConcluido] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const valorNum = parseFloat(valor.replace(',', '.')) || 0;
+  const saldo = Number(objetivo.saldoAtual);
+
+  const handleConfirm = async () => {
+    if (valorNum <= 0 || valorNum > saldo) return;
+    setSaving(true);
+    try {
+      await onConsumir({
+        objetivoId: objetivo.id,
+        valorConsumido: valorNum,
+        justificativa,
+        marcarConcluido: marcarConcluido || undefined,
+      });
+      onClose();
+    } catch {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in duration-200">
+        <button onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+          <X size={20} />
+        </button>
+
+        <h2 className="text-lg font-bold text-gray-800 mb-1">Usar Dinheiro</h2>
+        <p className="text-sm text-gray-500 mb-5">{objetivo.nome}</p>
+
+        <div className="space-y-4 mb-6">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Saldo Disponível</label>
+            <p className="text-lg font-bold text-green-600">
+              R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Valor a Usar</label>
+            <input type="number" step="0.01" value={valor} onChange={e => setValor(e.target.value)}
+              min="0.01" max={saldo}
+              placeholder="0,00"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            {valorNum > saldo && (
+              <p className="text-xs text-red-500 mt-1">Valor excede o saldo disponível</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Justificativa</label>
+            <input type="text" value={justificativa} onChange={e => setJustificativa(e.target.value)}
+              placeholder="Ex: Comprei um celular novo"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={marcarConcluido} onChange={e => setMarcarConcluido(e.target.checked)}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+            <span className="text-sm text-gray-600">Marcar objetivo como concluído</span>
+          </label>
         </div>
 
         <div className="flex gap-3">
@@ -138,9 +239,66 @@ function EditModal({ aporte, onClose, onSave }) {
             className="flex-1 py-2.5 rounded-lg font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer">
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving}
+          <button onClick={handleConfirm} disabled={saving || valorNum <= 0 || valorNum > saldo}
             className="flex-1 py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer">
-            <Save size={18} /> {saving ? 'Salvando...' : 'Salvar'}
+            <Wallet size={18} /> {saving ? 'Consumindo...' : 'Confirmar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CriarObjetivoModal({ onClose, onCriar }) {
+  const [nome, setNome] = useState('');
+  const [valorAlvo, setValorAlvo] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleConfirm = async () => {
+    if (!nome.trim() || !valorAlvo) return;
+    setSaving(true);
+    try {
+      await onCriar({ nome: nome.trim(), valorAlvo: parseFloat(valorAlvo.replace(',', '.')) });
+      onClose();
+    } catch {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in duration-200">
+        <button onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+          <X size={20} />
+        </button>
+
+        <h2 className="text-lg font-bold text-gray-800 mb-5">Novo Objetivo</h2>
+
+        <div className="space-y-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+            <input type="text" value={nome} onChange={e => setNome(e.target.value)}
+              placeholder="Ex: Celular Novo, Reserva de Emergência"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Valor Alvo</label>
+            <input type="number" step="0.01" value={valorAlvo} onChange={e => setValorAlvo(e.target.value)}
+              placeholder="0,00"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer">
+            Cancelar
+          </button>
+          <button onClick={handleConfirm} disabled={saving || !nome.trim() || !valorAlvo}
+            className="flex-1 py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <Target size={18} /> {saving ? 'Criando...' : 'Criar'}
           </button>
         </div>
       </div>
@@ -151,29 +309,31 @@ function EditModal({ aporte, onClose, onSave }) {
 function Aportes() {
   const [dashboard, setDashboard] = useState(null);
   const [aportes, setAportes] = useState([]);
-  const [evolucao, setEvolucao] = useState([]);
+  const [objetivos, setObjetivos] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
   const [editAporte, setEditAporte] = useState(null);
+  const [consumirModal, setConsumirModal] = useState({ open: false, objetivo: null });
+  const [criarObjetivoModal, setCriarObjetivoModal] = useState(false);
   const [pageSize, setPageSize] = useState(10);
 
   const carregarDados = async (pagina = 0) => {
     try {
       setLoading(true);
-      const [resLista, resDash, resEvol] = await Promise.all([
+      const [resLista, resDash, resObjetivos] = await Promise.all([
         aporteService.listar({ page: pagina, size: pageSize }),
         aporteService.dashboard(),
-        aporteService.evolucaoDetalhada(),
+        objetivoService.listarAtivos(),
       ]);
       setAportes(resLista.data.content);
       setTotalPages(resLista.data.totalPages);
       setPage(resLista.data.number);
       setDashboard(resDash.data);
-      setEvolucao(resEvol.data || []);
+      setObjetivos(resObjetivos.data || []);
     } catch (err) {
-      console.error("Erro ao carregar aportes:", err);
+      console.error("Erro ao carregar dados:", err);
     } finally {
       setLoading(false);
     }
@@ -193,21 +353,15 @@ function Aportes() {
       .catch(err => console.error("Erro ao deletar:", err));
   };
 
-  const tickers = useMemo(() => {
-    const set = new Set();
-    evolucao.forEach(item => {
-      Object.keys(item).forEach(k => {
-        if (k !== 'mes') set.add(k);
-      });
-    });
-    return Array.from(set);
-  }, [evolucao]);
+  const handleConsumir = async (payload) => {
+    await objetivoService.consumir(payload);
+    carregarDados(page);
+  };
 
-  const tickerColorMap = useMemo(() => {
-    const map = {};
-    tickers.forEach((t, i) => { map[t] = TICKER_COLORS[i % TICKER_COLORS.length]; });
-    return map;
-  }, [tickers]);
+  const handleCriarObjetivo = async (payload) => {
+    await objetivoService.criar(payload);
+    carregarDados(page);
+  };
 
   const formatarData = (dataStr) =>
     new Date(dataStr + 'T00:00:00').toLocaleDateString('pt-BR');
@@ -278,6 +432,7 @@ function Aportes() {
                         <th className="p-3 font-semibold text-sm text-gray-600">Data</th>
                         <th className="p-3 font-semibold text-sm text-gray-600">Descrição</th>
                         <th className="p-3 font-semibold text-sm text-gray-600">Ativo</th>
+                        <th className="p-3 font-semibold text-sm text-gray-600">Objetivo</th>
                         <th className="p-3 font-semibold text-sm text-gray-600 text-right">Valor</th>
                         <th className="p-3 font-semibold text-sm text-gray-600 text-right w-20">Ações</th>
                       </tr>
@@ -290,8 +445,17 @@ function Aportes() {
                           <td className="p-3 text-sm text-gray-500">{formatarData(a.data)}</td>
                           <td className="p-3 text-sm font-medium text-gray-800">{a.descricao}</td>
                           <td className="p-3">{categoryBadge(a.ticker)}</td>
-                          <td className="p-3 text-sm font-semibold text-green-600 text-right">
-                            R$ {Number(a.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          <td className="p-3">
+                            {a.objetivoNome ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700">
+                                <Target size={12} /> {a.objetivoNome}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className={`p-3 text-sm font-semibold text-right ${Number(a.valor) < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                            {Number(a.valor) < 0 ? '-' : ''}R$ {Math.abs(Number(a.valor)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                           <td className="p-3 text-right">
                             <button onClick={e => { e.stopPropagation(); handleAbrirConfirmacao(a.id); }}
@@ -354,39 +518,47 @@ function Aportes() {
               </>
             )}
 
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase mb-3">Por Ativo</h2>
-              {evolucao.length > 0 && tickers.length > 0 ? (
-                <ResponsiveContainer width="100%" height={240}>
-                  <AreaChart data={evolucao}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="mes" fontSize={10} tickLine={false} interval="preserveStartEnd" />
-                    <YAxis fontSize={10} tickLine={false}
-                      tickFormatter={v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v} />
-                    <Tooltip
-                      formatter={(value, name) => ['R$ ' + Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 }), name]}
-                    />
-                    {tickers.map(t => (
-                      <Area key={t} type="monotone" dataKey={t} stackId="1"
-                        stroke={tickerColorMap[t]} fill={tickerColorMap[t]} strokeWidth={1} />
-                    ))}
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[240px] text-gray-400 text-sm">
-                  Sem dados para exibir
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-500 uppercase">Meus Objetivos</h2>
+                <button onClick={() => setCriarObjetivoModal(true)}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors cursor-pointer">
+                  <Plus size={14} /> Criar Novo
+                </button>
+              </div>
+              {objetivos.length > 0 ? (
+                <div className="divide-y divide-gray-50 max-h-[420px] overflow-y-auto">
+                  {objetivos.map(obj => {
+                    const saldo = Number(obj.saldoAtual);
+                    const alvo = Number(obj.valorAlvo);
+                    const percentual = alvo > 0 ? Math.min((saldo / alvo) * 100, 100) : 0;
+                    return (
+                      <div key={obj.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm font-medium text-gray-800 truncate mr-2">{obj.nome}</span>
+                          <button onClick={() => setConsumirModal({ open: true, objetivo: obj })}
+                            className="text-gray-400 hover:text-blue-600 transition-colors p-1 shrink-0 cursor-pointer"
+                            title="Usar dinheiro deste objetivo">
+                            <Wallet size={16} />
+                          </button>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                          <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
+                            style={{ width: `${percentual}%` }} />
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                          <span>de R$ {alvo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                          <span className="font-medium text-gray-700">{percentual.toFixed(0)}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-
-              {tickers.length > 0 && (
-                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 pt-3 border-t border-gray-100 max-h-24 overflow-y-auto">
-                  {tickers.map(t => (
-                    <span key={t} className="inline-flex items-center gap-1 text-xs text-gray-500">
-                      <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
-                        style={{ backgroundColor: tickerColorMap[t] }} />
-                      {t}
-                    </span>
-                  ))}
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[180px] text-gray-400 text-sm gap-2">
+                  <Target size={28} className="text-gray-300" />
+                  <span>Nenhum objetivo ativo</span>
                 </div>
               )}
             </div>
@@ -399,6 +571,21 @@ function Aportes() {
           aporte={editAporte}
           onClose={() => setEditAporte(null)}
           onSave={() => { setEditAporte(null); carregarDados(page); }}
+        />
+      )}
+
+      {consumirModal.open && (
+        <ConsumirModal
+          objetivo={consumirModal.objetivo}
+          onClose={() => setConsumirModal({ open: false, objetivo: null })}
+          onConsumir={handleConsumir}
+        />
+      )}
+
+      {criarObjetivoModal && (
+        <CriarObjetivoModal
+          onClose={() => setCriarObjetivoModal(false)}
+          onCriar={handleCriarObjetivo}
         />
       )}
 
