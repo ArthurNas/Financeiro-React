@@ -15,10 +15,10 @@ function Despesa() {
     const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
 
     const dataAtual = new Date()
-    const [filtroMes, setFiltroMes] = useState(String(dataAtual.getMonth() + 1).padStart(2, '0'))
-    const [filtroAno, setFiltroAno] = useState(String(dataAtual.getFullYear()))
-    const [filtroDescricao, setFiltroDescricao] = useState('')
-    const [filtroTipoId, setFiltroTipoId] = useState('')
+    const [filtroMes, setFiltroMes] = useState(() => sessionStorage.getItem('despesa_filtroMes') || String(dataAtual.getMonth() + 1).padStart(2, '0'))
+    const [filtroAno, setFiltroAno] = useState(() => sessionStorage.getItem('despesa_filtroAno') || String(dataAtual.getFullYear()))
+    const [filtroDescricao, setFiltroDescricao] = useState(() => sessionStorage.getItem('despesa_filtroDescricao') || '')
+    const [filtroTipoId, setFiltroTipoId] = useState(() => sessionStorage.getItem('despesa_filtroTipoId') || '')
 
     useEffect(() => {
       tipoService.listar().then(res => setTipos(res.data)).catch(() => {});
@@ -128,8 +128,8 @@ function Despesa() {
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-2 ml-1">Buscar Descrição</label>
             <div className="relative">
               <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-              <input type="text" placeholder="Ex: Aluguel, Mercado..." className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
-                value={filtroDescricao} onChange={(e) => setFiltroDescricao(e.target.value)}/>
+               <input type="text" placeholder="Ex: Aluguel, Mercado..." className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                value={filtroDescricao} onChange={(e) => { setFiltroDescricao(e.target.value); sessionStorage.setItem('despesa_filtroDescricao', e.target.value); }}/>
             </div>
           </div>
 
@@ -138,7 +138,7 @@ function Despesa() {
             <select
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
               value={filtroTipoId}
-              onChange={(e) => setFiltroTipoId(e.target.value)}
+              onChange={(e) => { setFiltroTipoId(e.target.value); sessionStorage.setItem('despesa_filtroTipoId', e.target.value); }}
             >
               <option value="">Todos</option>
               {tipos.map(t => (
@@ -152,7 +152,7 @@ function Despesa() {
             <select 
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
               value={filtroMes}
-              onChange={(e) => setFiltroMes(e.target.value)}
+              onChange={(e) => { setFiltroMes(e.target.value); sessionStorage.setItem('despesa_filtroMes', e.target.value); }}
             >
               <option value="">Todos</option>
               <option value="01">Janeiro</option>
@@ -176,7 +176,7 @@ function Despesa() {
               type="number"
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               value={filtroAno}
-              onChange={(e) => setFiltroAno(e.target.value)}
+              onChange={(e) => { setFiltroAno(e.target.value); sessionStorage.setItem('despesa_filtroAno', e.target.value); }}
             />
           </div>
 

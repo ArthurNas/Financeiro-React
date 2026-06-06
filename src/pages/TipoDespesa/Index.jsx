@@ -13,7 +13,7 @@ function TipoDespesa() {
     const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
     const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
 
-    const [filtroDescricao, setFiltroDescricao] = useState('')
+    const [filtroDescricao, setFiltroDescricao] = useState(() => sessionStorage.getItem('tipo_filtroDescricao') || '')
 
     const buscarDados = async () => {
       try {
@@ -75,8 +75,8 @@ function TipoDespesa() {
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-2 ml-1">Buscar Descrição</label>
             <div className="relative">
               <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-              <input type="text" placeholder="Ex: Alimentação..." className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
-                value={filtroDescricao} onChange={(e) => setFiltroDescricao(e.target.value)}/>
+               <input type="text" placeholder="Ex: Alimentação..." className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                value={filtroDescricao} onChange={(e) => { setFiltroDescricao(e.target.value); sessionStorage.setItem('tipo_filtroDescricao', e.target.value); }}/>
             </div>
           </div>
 
