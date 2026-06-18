@@ -6,6 +6,8 @@ import { AuthContext } from '../../components/AuthContext';
 import MessageModal from '../../components/messageModal';
 
 const INITIAL_STATE = { id: '', nome: '', email: '', senha: '', role: 'USER' };
+const SENHA_ROBUSTA_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).{8,}$/;
+const SENHA_ROBUSTA_MSG = 'A senha deve ter no minimo 8 caracteres, incluindo maiuscula, minuscula, numero e caracter especial.';
 
 function CadastroUsuario() {
   const { state } = useLocation();
@@ -48,6 +50,16 @@ function CadastroUsuario() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (salvando) return;
+
+    if (formData.senha && !SENHA_ROBUSTA_REGEX.test(formData.senha)) {
+      setModal({
+        open: true,
+        type: "error",
+        message: SENHA_ROBUSTA_MSG,
+      });
+      return;
+    }
+
     setSalvando(true);
 
     const acao = editando
@@ -105,6 +117,9 @@ function CadastroUsuario() {
               </label>
               <input type="password" id="senha" name="senha" value={formData.senha} onChange={handleChange} required={!editando}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"/>
+              <p className="mt-1 text-xs text-gray-500">
+                Minimo 8 caracteres, com maiuscula, minuscula, numero e caracter especial.
+              </p>
             </div>
 
             {user?.role === 'ROLE_ADMIN' && (
