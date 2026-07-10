@@ -58,7 +58,13 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
-                  <Route path="/usuarios/editar/:id" element={<CadastroUsuario />}
+                  <Route
+                    path="/usuarios/editar/:id"
+                    element={
+                      <ProtectedRoute deniedRoles={["TESTE"]}>
+                        <CadastroUsuario />
+                      </ProtectedRoute>
+                    }
                   />
                 </Routes>
               </MainLayout>

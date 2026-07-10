@@ -55,7 +55,7 @@ function Provento() {
           setModal({
             open: true,
             type: "error",
-            message: "Erro ao excluir provento: " + (error.response?.data?.mensagem || error.message),
+            message: "Erro ao excluir provento: " + (err.response?.data?.mensagem || err.message),
           });
           console.error("Erro ao deletar:", err);
         });
@@ -74,8 +74,8 @@ function Provento() {
     <div className="min-h-screen bg-gray-100 p-5 text-gray-800">
       <div className="max-w-4xl mx-auto">
         
-        <header className="mb-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex justify-between items-start mb-6">
+        <header className="mb-2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Wallet className="text-blue-600" size={24} />
@@ -89,7 +89,7 @@ function Provento() {
             </div>
 
             <Link to="/cadastroProvento" 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-all shadow-md shadow-blue-100 hover:scale-105 active:scale-95">
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-100 hover:scale-105 active:scale-95">
               <Plus size={20} strokeWidth={3} /> Novo Provento
             </Link>
           </div>
@@ -119,7 +119,7 @@ function Provento() {
         </header>
 
         {/* Barra de Filtros */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-wrap gap-4 items-end">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-2 ml-1">Buscar Descrição</label>
             <div className="relative">
@@ -171,8 +171,54 @@ function Provento() {
         </div>
 
         {/* Tabela Estilizada */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full text-left border-collapse">
+        <div className="space-y-3 md:hidden">
+          {proventos.map((d) => (
+            <div key={d.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="truncate text-sm font-bold text-gray-800">{d.descricao}</h2>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {new Date(d.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/cadastroProvento', { state: { provento: d } })}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100"
+                    aria-label="Editar provento"
+                  >
+                    <Edit2 size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAbrirConfirmacao(d.id)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600 transition-colors hover:bg-red-100"
+                    aria-label="Excluir provento"
+                  >
+                    <Trash2 size={17} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs font-semibold uppercase text-gray-400">Valor</p>
+                <p className="mt-1 font-bold text-green-600">
+                  R$ {d.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+          ))}
+          {proventos.length === 0 && (
+            <div className="rounded-xl bg-white p-8 text-center text-gray-400 shadow-sm">
+              Nenhum registro encontrado.
+            </div>
+          )}
+        </div>
+
+        <div className="hidden bg-white rounded-xl shadow-sm overflow-x-auto md:block">
+          <table className="w-full min-w-[640px] text-left border-collapse">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="p-4 font-semibold text-sm text-gray-600">Descrição</th>

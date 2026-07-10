@@ -19,6 +19,7 @@ function CadastroUsuario() {
   const [salvando, setSalvando] = useState(false);
 
   const editando = !!state?.usuario || !!id;
+  const usuarioEhAdmin = user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN';
 
   const [formData, setFormData] = useState({ ...INITIAL_STATE });
 
@@ -61,14 +62,14 @@ function CadastroUsuario() {
     }
 
     setSalvando(true);
-
+console.log(formData);
     const acao = editando
       ? usuarioService.atualizar(formData.id, formData)
       : usuarioService.salvar(formData);
 
     acao.then(() => {
         if (editando) {
-          navigate(user?.role === 'ROLE_ADMIN' ? '/usuarios' : '/');
+          navigate(usuarioEhAdmin ? '/usuarios' : '/');
         } else {
           showBanner("success", "Usuário registrado com sucesso!");
           setFormData({ ...INITIAL_STATE });
@@ -122,7 +123,7 @@ function CadastroUsuario() {
               </p>
             </div>
 
-            {user?.role === 'ROLE_ADMIN' && (
+            {usuarioEhAdmin && (
               <div className="mb-6">
                 <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
                   Nível de Acesso
@@ -130,13 +131,14 @@ function CadastroUsuario() {
                 <select id="role" name="role" value={formData.role} onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md outline-none bg-white focus:ring-blue-500">
                   <option value="USER">Usuário Comum</option>
+                  <option value="TESTE">Usuário de Teste</option>
                   <option value="ADMIN">Administrador</option>
                 </select>
               </div>
             )}
 
             <div className="flex justify-end gap-2 pt-6">
-              <Link to={user?.role === 'ROLE_ADMIN' ? '/usuarios' : '/'} className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors">
+              <Link to={usuarioEhAdmin ? '/usuarios' : '/'} className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors">
                 <ArrowLeft size={20}/> Voltar
               </Link>
 

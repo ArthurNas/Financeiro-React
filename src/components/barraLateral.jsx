@@ -53,6 +53,7 @@ export function BarraLateral({ aberta, onToggle, onNavigate, onCloseMobile }) {
   const { user, logout } = useContext(AuthContext);
 
   const perfilPath = `/usuarios/editar/${user?.id}`;
+  const usuarioTeste = user?.role === 'TESTE';
   const isSelected = (path) => location.pathname === path;
   const isProfileSelected = () => location.pathname.startsWith("/usuarios/editar/");
 
@@ -125,12 +126,14 @@ export function BarraLateral({ aberta, onToggle, onNavigate, onCloseMobile }) {
           />
         )}
 
-        <NavItem
-          item={{ label: "Meu Perfil", path: perfilPath, icon: HiUserCircle }}
-          selected={isProfileSelected()}
-          aberta={aberta}
-          onNavigate={onNavigate}
-        />
+        {!usuarioTeste && (
+          <NavItem
+            item={{ label: "Meu Perfil", path: perfilPath, icon: HiUserCircle }}
+            selected={isProfileSelected()}
+            aberta={aberta}
+            onNavigate={onNavigate}
+          />
+        )}
 
         <button
           type="button"

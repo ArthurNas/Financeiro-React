@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
-export function ProtectedRoute({ children, requiredRole }) {
+export function ProtectedRoute({ children, requiredRole, deniedRoles = [] }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -20,6 +20,10 @@ export function ProtectedRoute({ children, requiredRole }) {
   }
 
   if (requiredRole && user.role !== requiredRole) {
+    return <Navigate to="/acesso-negado" replace />;
+  }
+
+  if (deniedRoles.includes(user.role)) {
     return <Navigate to="/acesso-negado" replace />;
   }
 
