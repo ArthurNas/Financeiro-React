@@ -11,6 +11,7 @@ const InputMoeda = ({ label, value, onChange, name, error }) => {
       <NumericFormat
         name={name}
         value={value}
+        inputMode="decimal"
         onValueChange={(values) => {
           onChange({ target: { name, value: values.floatValue } });
         }}

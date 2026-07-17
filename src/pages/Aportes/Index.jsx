@@ -211,7 +211,7 @@ function ConsumirModal({ objetivo, onClose, onConsumir }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Valor a Usar</label>
-            <input type="number" step="0.01" value={valor} onChange={e => setValor(e.target.value)}
+            <input type="number" inputMode="decimal" step="0.01" value={valor} onChange={e => setValor(e.target.value)}
               min="0.01" max={saldo}
               placeholder="0,00"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
@@ -285,7 +285,7 @@ function CriarObjetivoModal({ onClose, onCriar }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Valor Alvo</label>
-            <input type="number" step="0.01" value={valorAlvo} onChange={e => setValorAlvo(e.target.value)}
+            <input type="number" inputMode="decimal" step="0.01" value={valorAlvo} onChange={e => setValorAlvo(e.target.value)}
               placeholder="0,00"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
           </div>

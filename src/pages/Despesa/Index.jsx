@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo } from 'react';
 import despesaService from '../../service/despesaService';
 import proventoService from '../../service/proventoService';
 import tipoService from '../../service/tipoService';
-import { Plus, Trash2, Wallet, Search, Edit2 } from 'lucide-react';
+import projecaoService from '../../service/projecaoService';
+import { Plus, Trash2, Wallet, Search, Edit2, Bell, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/confirmModal';
@@ -11,6 +12,9 @@ function Despesa() {
     const [despesas, setDespesas] = useState([])
     const [proventos, setProventos] = useState([])
     const [tipos, setTipos] = useState([])
+    const projecoes = []
+    const projecaoEdits = {}
+    const [valoresVisiveis, setValoresVisiveis] = useState(false);
     const navigate = useNavigate();
     const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
 
@@ -20,12 +24,15 @@ function Despesa() {
     const [filtroDescricao, setFiltroDescricao] = useState(() => sessionStorage.getItem('despesa_filtroDescricao') || '')
     const [filtroTipoId, setFiltroTipoId] = useState(() => sessionStorage.getItem('despesa_filtroTipoId') || '')
 
+    const handleProjecaoChange = () => {};
+
     useEffect(() => {
       tipoService.listar().then(res => setTipos(res.data)).catch(() => {});
     }, []);
 
     const buscarDados = async () => {
       try {
+        setValoresVisiveis(false);
         const params = { descricao: filtroDescricao, mes: filtroMes, ano: filtroAno, tipoId: filtroTipoId || undefined };
 
         const [resDespesas, resProventos] = await Promise.all([
@@ -38,6 +45,18 @@ function Despesa() {
       } catch (error) {
           console.error("Erro ao buscar dados filtrados:", error);
       }
+    };
+
+    const confirmarProjecao = (projecao) => {
+      const edit = projecaoEdits[projecao.id] || {};
+
+      projecaoService.confirmar(projecao.id, {
+        descricaoReal: edit.descricaoReal,
+        valorReal: Number(edit.valorReal),
+        dataPagamento: new Date().toISOString().split('T')[0],
+      })
+        .then(() => buscarDados())
+        .catch((error) => console.error("Erro ao confirmar projeção:", error));
     };
 
     useEffect(() => {
@@ -73,6 +92,10 @@ function Despesa() {
       proventos.reduce((acc, curr) => acc + curr.valor, 0), 
   [proventos]);
   const saldo = (totalGanho - totalGasto);
+  const formatarValorGrande = (valor) => {
+    if (!valoresVisiveis) return 'R$ ••••••';
+    return `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-1 text-gray-800">
@@ -92,31 +115,41 @@ function Despesa() {
               </div>
             </div>
 
-            <Link to="/cadastroDespesa" 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-100 hover:scale-105 active:scale-95">
-              <Plus size={20} strokeWidth={3} /> Nova Despesa
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setValoresVisiveis((visivel) => !visivel)}
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 font-semibold transition hover:bg-gray-50"
+              >
+                {valoresVisiveis ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+
+              <Link to="/cadastroDespesa" 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-100 hover:scale-105 active:scale-95">
+                <Plus size={20} strokeWidth={3} /> Nova Despesa
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 hover:bg-white hover:shadow-md transition-all group">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider group-hover:text-gray-500">Total Ganho</p>
               <p className="text-xl font-bold text-green-600 mt-1">
-                R$ {totalGanho.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {formatarValorGrande(totalGanho)}
               </p>
             </div>
 
             <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 hover:bg-white hover:shadow-md transition-all group">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider group-hover:text-gray-500">Total Gasto</p>
               <p className="text-xl font-bold text-red-600 mt-1">
-                R$ {totalGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {formatarValorGrande(totalGasto)}
               </p>
             </div>
 
             <div className={`p-4 rounded-xl border transition-all hover:shadow-md group ${saldo >= 0 ? 'bg-blue-50/30 border-blue-100 hover:bg-white' : 'bg-orange-50/30 border-orange-100 hover:bg-white'}`}>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider group-hover:text-gray-500">Saldo Atual</p>
               <p className={`text-xl font-bold mt-1 ${saldo >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {formatarValorGrande(saldo)}
               </p>
             </div>
           </div>
@@ -187,6 +220,62 @@ function Despesa() {
             Limpar
           </button>
         </div>
+
+        {projecoes.length > 0 && (
+          <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+            <div className="mb-3 flex items-start gap-3">
+              <div className="rounded-lg bg-amber-100 p-2 text-amber-700">
+                <Bell size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-amber-900">Despesas projetadas para pagar</h2>
+                <p className="text-xs text-amber-700">
+                  Confira os dados e confirme o pagamento para registrar a despesa real.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {projecoes.map((p) => (
+                <div key={p.id} className="grid gap-3 rounded-lg border border-amber-100 bg-white p-3 md:grid-cols-[1fr_140px_auto] md:items-end">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Descrição</label>
+                    <input
+                      type="text"
+                      value={projecaoEdits[p.id]?.descricaoReal || ''}
+                      onChange={(e) => handleProjecaoChange(p.id, 'descricaoReal', e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                    <p className="mt-1 text-xs text-gray-400">
+                      Parcela {p.parcelaAtual}/{p.totalParcelas} - vence em {new Date(p.dataVencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Valor</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min="0"
+                      value={projecaoEdits[p.id]?.valorReal || ''}
+                      onChange={(e) => handleProjecaoChange(p.id, 'valorReal', e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => confirmarProjecao(p)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+                  >
+                    <CheckCircle2 size={18} /> Confirmar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tabela Estilizada */}
         <div className="space-y-3 md:hidden">

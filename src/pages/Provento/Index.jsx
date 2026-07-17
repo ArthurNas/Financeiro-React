@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import despesaService from '../../service/despesaService';
 import proventoService from '../../service/proventoService';
-import { Plus, Trash2, Wallet, Search, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Wallet, Search, Edit2, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/confirmModal';
@@ -13,6 +13,7 @@ function Provento() {
     const navigate = useNavigate();
     const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
     const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
+    const [valoresVisiveis, setValoresVisiveis] = useState(false);
 
     const dataAtual = new Date()
     const [filtroMes, setFiltroMes] = useState(() => sessionStorage.getItem('provento_filtroMes') || String(dataAtual.getMonth() + 1).padStart(2, '0'))
@@ -21,6 +22,7 @@ function Provento() {
 
     const buscarDados = async () => {
       try {
+        setValoresVisiveis(false);
         const params = { descricao: filtroDescricao, mes: filtroMes, ano: filtroAno };
 
         const [resDespesas, resProventos] = await Promise.all([
@@ -69,6 +71,10 @@ function Provento() {
         proventos.reduce((acc, curr) => acc + curr.valor, 0), 
     [proventos]);
   const saldo = (totalGanho - totalGasto);
+  const formatarValorGrande = (valor) => {
+    if (!valoresVisiveis) return 'R$ ••••••';
+    return `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-5 text-gray-800">
@@ -88,31 +94,41 @@ function Provento() {
               </div>
             </div>
 
-            <Link to="/cadastroProvento" 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-100 hover:scale-105 active:scale-95">
-              <Plus size={20} strokeWidth={3} /> Novo Provento
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setValoresVisiveis((visivel) => !visivel)}
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 font-semibold transition hover:bg-gray-50"
+              >
+                {valoresVisiveis ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+
+              <Link to="/cadastroProvento" 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-100 hover:scale-105 active:scale-95">
+                <Plus size={20} strokeWidth={3} /> Novo Provento
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 hover:bg-white hover:shadow-md transition-all group">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider group-hover:text-gray-500">Total Ganho</p>
               <p className="text-xl font-bold text-green-600 mt-1">
-                R$ {totalGanho.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {formatarValorGrande(totalGanho)}
               </p>
             </div>
 
             <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 hover:bg-white hover:shadow-md transition-all group">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider group-hover:text-gray-500">Total Gasto</p>
               <p className="text-xl font-bold text-red-600 mt-1">
-                R$ {totalGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {formatarValorGrande(totalGasto)}
               </p>
             </div>
 
             <div className={`p-4 rounded-xl border transition-all hover:shadow-md group ${saldo >= 0 ? 'bg-blue-50/30 border-blue-100 hover:bg-white' : 'bg-orange-50/30 border-orange-100 hover:bg-white'}`}>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider group-hover:text-gray-500">Saldo Atual</p>
               <p className={`text-xl font-bold mt-1 ${saldo >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {formatarValorGrande(saldo)}
               </p>
             </div>
           </div>
