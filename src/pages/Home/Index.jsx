@@ -6,6 +6,7 @@ import proventoService from '../../service/proventoService';
 import projecaoService from '../../service/projecaoService';
 import tipoService from '../../service/tipoService';
 import ResumoOrcamentoWidget from '../../components/ResumoOrcamentoWidget';
+import { useValoresVisiveis } from '../../hooks/useValoresVisiveis';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
@@ -16,7 +17,7 @@ const Home = () => {
   const [projecoes, setProjecoes] = useState([]);
   const [projecaoEdits, setProjecaoEdits] = useState({});
   const [alertasAbertos, setAlertasAbertos] = useState(false);
-  const [valoresVisiveis, setValoresVisiveis] = useState(true);
+  const [valoresVisiveis, setValoresVisiveis] = useValoresVisiveis();
   const [modalRecorrenteAberto, setModalRecorrenteAberto] = useState(false);
   const [salvandoRecorrente, setSalvandoRecorrente] = useState(false);
   const [recorrenteForm, setRecorrenteForm] = useState({
@@ -32,7 +33,6 @@ const Home = () => {
   });
 
   const carregarDados = () => {
-    setValoresVisiveis(false);
     setLoading(true);
     Promise.all([
       despesaService.listar({ mes: filtro.mes, ano: filtro.ano }),

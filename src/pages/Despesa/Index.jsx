@@ -7,6 +7,7 @@ import { Plus, Trash2, Wallet, Search, Edit2, Bell, CheckCircle2, Eye, EyeOff } 
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/confirmModal';
+import { useValoresVisiveis } from '../../hooks/useValoresVisiveis';
 
 function Despesa() {
     const [despesas, setDespesas] = useState([])
@@ -14,7 +15,7 @@ function Despesa() {
     const [tipos, setTipos] = useState([])
     const projecoes = []
     const projecaoEdits = {}
-    const [valoresVisiveis, setValoresVisiveis] = useState(false);
+    const [valoresVisiveis, setValoresVisiveis] = useValoresVisiveis();
     const navigate = useNavigate();
     const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
 
@@ -32,7 +33,6 @@ function Despesa() {
 
     const buscarDados = async () => {
       try {
-        setValoresVisiveis(false);
         const params = { descricao: filtroDescricao, mes: filtroMes, ano: filtroAno, tipoId: filtroTipoId || undefined };
 
         const [resDespesas, resProventos] = await Promise.all([

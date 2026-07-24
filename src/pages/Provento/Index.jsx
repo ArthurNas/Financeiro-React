@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/confirmModal';
 import MessageModal from '../../components/messageModal';
+import { useValoresVisiveis } from '../../hooks/useValoresVisiveis';
 
 function Provento() {
     const [despesas, setDespesas] = useState([])
@@ -13,7 +14,7 @@ function Provento() {
     const navigate = useNavigate();
     const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
     const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
-    const [valoresVisiveis, setValoresVisiveis] = useState(false);
+    const [valoresVisiveis, setValoresVisiveis] = useValoresVisiveis();
 
     const dataAtual = new Date()
     const [filtroMes, setFiltroMes] = useState(() => sessionStorage.getItem('provento_filtroMes') || String(dataAtual.getMonth() + 1).padStart(2, '0'))
@@ -22,7 +23,6 @@ function Provento() {
 
     const buscarDados = async () => {
       try {
-        setValoresVisiveis(false);
         const params = { descricao: filtroDescricao, mes: filtroMes, ano: filtroAno };
 
         const [resDespesas, resProventos] = await Promise.all([
