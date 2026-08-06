@@ -1,6 +1,6 @@
 import { NumericFormat } from 'react-number-format';
 
-const InputMoeda = ({ label, value, onChange, name, error }) => {
+const InputMoeda = ({ label, value, onChange, name, error, ...props }) => {
   return (
     <div className="flex flex-col gap-1 w-full">
       {label && (
@@ -21,6 +21,7 @@ const InputMoeda = ({ label, value, onChange, name, error }) => {
         decimalScale={2}
         fixedDecimalScale
         allowNegative={false}
+        {...props}
         className={`
           w-full px-3 py-2 border rounded-md outline-none transition-all
           ${error ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'}

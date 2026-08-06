@@ -6,9 +6,11 @@ import proventoService from '../../service/proventoService';
 import projecaoService from '../../service/projecaoService';
 import tipoService from '../../service/tipoService';
 import ResumoOrcamentoWidget from '../../components/ResumoOrcamentoWidget';
+import InputMoeda from '../../components/InputMoeda';
 import { useValoresVisiveis } from '../../hooks/useValoresVisiveis';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+const hoje = new Date().toISOString().split('T')[0];
 
 const Home = () => {
   const [despesas, setDespesas] = useState([]);
@@ -48,6 +50,7 @@ const Home = () => {
           {
             descricaoReal: p.descricao || '',
             valorReal: p.valorEstimado ?? '',
+            dataPagamento: hoje,
           }
         ])));
       })
@@ -81,7 +84,7 @@ const Home = () => {
     projecaoService.confirmar(projecao.id, {
       descricaoReal: edit.descricaoReal,
       valorReal: Number(edit.valorReal),
-      dataPagamento: new Date().toISOString().split('T')[0],
+      dataPagamento: edit.dataPagamento || hoje,
     })
       .then(() => carregarDados())
       .catch((error) => console.error("Erro ao confirmar projeção:", error));
@@ -97,6 +100,14 @@ const Home = () => {
     projecaoService.excluir(projecao.id)
       .then(() => carregarDados())
       .catch((error) => console.error("Erro ao excluir projeção:", error));
+  };
+
+  const excluirProjecaoApenasMes = (projecao) => {
+    if (!window.confirm('Deseja excluir este alerta apenas neste mes?')) return;
+
+    projecaoService.excluirMes(projecao.id)
+      .then(() => carregarDados())
+      .catch((error) => console.error("Erro ao excluir alerta do mes:", error));
   };
 
   const handleRecorrenteChange = (e) => {
@@ -306,7 +317,7 @@ const Home = () => {
           {alertasAbertos && (
             <div className="grid gap-3 border-t border-amber-200 p-4 pt-3 lg:grid-cols-2">
               {projecoes.map((p) => (
-                <div key={p.id} className="grid gap-3 rounded-lg border border-amber-100 bg-white p-3 sm:grid-cols-[1fr_120px]">
+                <div key={p.id} className="grid gap-3 rounded-lg border border-amber-100 bg-white p-3 sm:grid-cols-[1fr_120px_150px]">
                   <div>
                     <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Descrição</label>
                     <input
@@ -316,24 +327,31 @@ const Home = () => {
                       className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                     />
                     <p className="mt-1 text-xs text-gray-400">
-                      Parcela {p.parcelaAtual}/{p.totalParcelas} - vence em {new Date(p.dataVencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                      {Number(p.totalParcelas) > 0 ? `Parcela ${p.parcelaAtual}/${p.totalParcelas} - ` : ''}
+                      vence em {new Date(p.dataVencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
                     </p>
                   </div>
 
                   <div>
                     <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Valor</label>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      step="0.01"
-                      min="0"
+                    <InputMoeda
+                      name="valorReal"
                       value={projecaoEdits[p.id]?.valorReal || ''}
                       onChange={(e) => handleProjecaoChange(p.id, 'valorReal', e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Pago em</label>
+                    <input
+                      type="date"
+                      value={projecaoEdits[p.id]?.dataPagamento || hoje}
+                      onChange={(e) => handleProjecaoChange(p.id, 'dataPagamento', e.target.value)}
                       className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                     />
                   </div>
 
-                  <div className="grid gap-2 sm:col-span-2 sm:grid-cols-[1fr_auto]">
+                  <div className="grid gap-2 sm:col-span-3 sm:grid-cols-[1fr_auto_auto]">
                     <button
                       type="button"
                       onClick={() => confirmarProjecao(p)}
@@ -342,11 +360,18 @@ const Home = () => {
                       <CheckCircle2 size={18} /> Confirmar
                     </button>
                     <button
+                        type="button"
+                        onClick={() => excluirProjecaoApenasMes(p)}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-amber-700 ring-1 ring-amber-200 transition hover:bg-amber-50"
+                      >
+                        <Trash2 size={18} /> Excluir mês
+                      </button>
+                    <button
                       type="button"
                       onClick={() => excluirProjecao(p)}
                       className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
                     >
-                      <Trash2 size={18} /> Excluir
+                      <Trash2 size={18} /> {p.tipoRecorrencia === 'RECORRENTE_VARIAVEL' ? 'Excluir recorrência' : 'Excluir'}
                     </button>
                   </div>
                 </div>
@@ -530,17 +555,11 @@ const Home = () => {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">Valor estimado</label>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    min="0"
+                  <InputMoeda
                     name="valorEstimado"
                     value={recorrenteForm.valorEstimado}
                     onChange={handleRecorrenteChange}
                     required
-                    placeholder="0,00"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
 

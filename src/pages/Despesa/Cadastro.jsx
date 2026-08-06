@@ -75,7 +75,10 @@ function Cadastro() {
           navigate('/despesa');
         } else{
           showBanner("success", "Despesa registrada com sucesso!");
-          setFormData({ ...INITIAL_STATE });
+          setFormData((dadosAtuais) => ({
+            ...INITIAL_STATE,
+            data: dadosAtuais.data,
+          }));
         }
         
       })
