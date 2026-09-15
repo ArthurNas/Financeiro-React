@@ -1,11 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
 import despesaService from '../../service/despesaService';
 import proventoService from '../../service/proventoService';
-import { Plus, Trash2, Wallet, Search, Edit2, Eye, EyeOff } from 'lucide-react';
+import projecaoProventoService from '../../service/projecaoProventoService';
+import { Plus, Trash2, Wallet, Search, Edit2, Eye, EyeOff, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/confirmModal';
 import MessageModal from '../../components/messageModal';
+import InputMoeda from '../../components/InputMoeda';
 import { useValoresVisiveis } from '../../hooks/useValoresVisiveis';
 
 function Provento() {
@@ -15,11 +17,19 @@ function Provento() {
     const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
     const [modal, setModal] = useState({ open: false, type: 'success', message: '' });
     const [valoresVisiveis, setValoresVisiveis] = useValoresVisiveis();
+    const [modalRecorrenteAberto, setModalRecorrenteAberto] = useState(false);
+    const [salvandoRecorrente, setSalvandoRecorrente] = useState(false);
 
     const dataAtual = new Date()
+    const hoje = new Date().toISOString().split('T')[0];
     const [filtroMes, setFiltroMes] = useState(() => sessionStorage.getItem('provento_filtroMes') || String(dataAtual.getMonth() + 1).padStart(2, '0'))
     const [filtroAno, setFiltroAno] = useState(() => sessionStorage.getItem('provento_filtroAno') || String(dataAtual.getFullYear()))
     const [filtroDescricao, setFiltroDescricao] = useState(() => sessionStorage.getItem('provento_filtroDescricao') || '')
+    const [recorrenteForm, setRecorrenteForm] = useState({
+      descricao: '',
+      valorEstimado: '',
+      dataVencimento: hoje,
+    });
 
     const buscarDados = async () => {
       try {
@@ -61,6 +71,40 @@ function Provento() {
           });
           console.error("Erro ao deletar:", err);
         });
+    };
+
+    const handleRecorrenteChange = (e) => {
+      const { name, value } = e.target;
+      setRecorrenteForm((form) => ({ ...form, [name]: value }));
+    };
+
+    const criarRecorrente = (e) => {
+      e.preventDefault();
+      if (salvandoRecorrente) return;
+
+      setSalvandoRecorrente(true);
+      projecaoProventoService.criarRecorrente({
+        descricao: recorrenteForm.descricao,
+        valorEstimado: Number(recorrenteForm.valorEstimado),
+        dataVencimento: recorrenteForm.dataVencimento,
+      })
+        .then(() => {
+          setModalRecorrenteAberto(false);
+          setRecorrenteForm({
+            descricao: '',
+            valorEstimado: '',
+            dataVencimento: hoje,
+          });
+          buscarDados();
+        })
+        .catch((error) => {
+          setModal({
+            open: true,
+            type: "error",
+            message: "Erro ao criar recorrencia: " + (error.response?.data?.mensagem || error.response?.data || error.message),
+          });
+        })
+        .finally(() => setSalvandoRecorrente(false));
     };
 
   const totalGasto = useMemo(() => 
@@ -107,6 +151,13 @@ function Provento() {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-100 hover:scale-105 active:scale-95">
                 <Plus size={20} strokeWidth={3} /> Novo Provento
               </Link>
+              <button
+                type="button"
+                onClick={() => setModalRecorrenteAberto(true)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-100"
+              >
+                <Bell size={20} strokeWidth={3} /> Novo Recorrente
+              </button>
             </div>
           </div>
 
@@ -271,6 +322,75 @@ function Provento() {
           )}
         </div>
       </div>
+
+      {modalRecorrenteAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800">Novo provento recorrente</h2>
+              <p className="text-sm text-gray-500">
+                Crie um alerta mensal para recebimentos de valor variavel.
+              </p>
+            </div>
+
+            <form onSubmit={criarRecorrente} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Descricao</label>
+                <input
+                  type="text"
+                  name="descricao"
+                  value={recorrenteForm.descricao}
+                  onChange={handleRecorrenteChange}
+                  required
+                  placeholder="Ex: Salario, aluguel recebido..."
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Valor estimado</label>
+                  <InputMoeda
+                    name="valorEstimado"
+                    value={recorrenteForm.valorEstimado}
+                    onChange={handleRecorrenteChange}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Primeiro recebimento</label>
+                  <input
+                    type="date"
+                    name="dataVencimento"
+                    value={recorrenteForm.dataVencimento}
+                    onChange={handleRecorrenteChange}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setModalRecorrenteAberto(false)}
+                  className="rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={salvandoRecorrente}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {salvandoRecorrente ? 'Salvando...' : 'Salvar recorrente'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal 
         isOpen={confirmModal.open}

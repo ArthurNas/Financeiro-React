@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/confirmModal';
 import { useValoresVisiveis } from '../../hooks/useValoresVisiveis';
+import InputMoeda from '../../components/InputMoeda';
 
 function Despesa() {
     const [despesas, setDespesas] = useState([])
@@ -18,12 +19,21 @@ function Despesa() {
     const [valoresVisiveis, setValoresVisiveis] = useValoresVisiveis();
     const navigate = useNavigate();
     const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
+    const [modalRecorrenteAberto, setModalRecorrenteAberto] = useState(false);
+    const [salvandoRecorrente, setSalvandoRecorrente] = useState(false);
 
     const dataAtual = new Date()
+    const hoje = new Date().toISOString().split('T')[0];
     const [filtroMes, setFiltroMes] = useState(() => sessionStorage.getItem('despesa_filtroMes') || String(dataAtual.getMonth() + 1).padStart(2, '0'))
     const [filtroAno, setFiltroAno] = useState(() => sessionStorage.getItem('despesa_filtroAno') || String(dataAtual.getFullYear()))
     const [filtroDescricao, setFiltroDescricao] = useState(() => sessionStorage.getItem('despesa_filtroDescricao') || '')
     const [filtroTipoId, setFiltroTipoId] = useState(() => sessionStorage.getItem('despesa_filtroTipoId') || '')
+    const [recorrenteForm, setRecorrenteForm] = useState({
+      descricao: '',
+      valorEstimado: '',
+      dataVencimento: hoje,
+      tipoId: '',
+    });
 
     const handleProjecaoChange = () => {};
 
@@ -83,6 +93,36 @@ function Despesa() {
         });
     };
 
+    const handleRecorrenteChange = (e) => {
+      const { name, value } = e.target;
+      setRecorrenteForm((form) => ({ ...form, [name]: value }));
+    };
+
+    const criarRecorrente = (e) => {
+      e.preventDefault();
+      if (salvandoRecorrente) return;
+
+      setSalvandoRecorrente(true);
+      projecaoService.criarRecorrente({
+        descricao: recorrenteForm.descricao,
+        valorEstimado: Number(recorrenteForm.valorEstimado),
+        dataVencimento: recorrenteForm.dataVencimento,
+        tipoId: recorrenteForm.tipoId || null,
+      })
+        .then(() => {
+          setModalRecorrenteAberto(false);
+          setRecorrenteForm({
+            descricao: '',
+            valorEstimado: '',
+            dataVencimento: hoje,
+            tipoId: '',
+          });
+          buscarDados();
+        })
+        .catch((error) => console.error("Erro ao criar despesa recorrente:", error))
+        .finally(() => setSalvandoRecorrente(false));
+    };
+
   // Cálculo do resumo financeiro
   const totalGasto = useMemo(() => 
       despesas.reduce((acc, curr) => acc + curr.valor, 0), 
@@ -128,6 +168,13 @@ function Despesa() {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-100 hover:scale-105 active:scale-95">
                 <Plus size={20} strokeWidth={3} /> Nova Despesa
               </Link>
+              <button
+                type="button"
+                onClick={() => setModalRecorrenteAberto(true)}
+                className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md shadow-amber-100"
+              >
+                <Bell size={20} strokeWidth={3} /> Nova Recorrente
+              </button>
             </div>
           </div>
 
@@ -388,6 +435,90 @@ function Despesa() {
           )}
         </div>
       </div>
+
+      {modalRecorrenteAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800">Nova despesa recorrente</h2>
+              <p className="text-sm text-gray-500">
+                Crie um alerta mensal para contas de valor variavel, como agua ou luz.
+              </p>
+            </div>
+
+            <form onSubmit={criarRecorrente} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Descricao</label>
+                <input
+                  type="text"
+                  name="descricao"
+                  value={recorrenteForm.descricao}
+                  onChange={handleRecorrenteChange}
+                  required
+                  placeholder="Ex: Conta de luz"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Valor estimado</label>
+                  <InputMoeda
+                    name="valorEstimado"
+                    value={recorrenteForm.valorEstimado}
+                    onChange={handleRecorrenteChange}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Primeiro vencimento</label>
+                  <input
+                    type="date"
+                    name="dataVencimento"
+                    value={recorrenteForm.dataVencimento}
+                    onChange={handleRecorrenteChange}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Tipo da despesa</label>
+                <select
+                  name="tipoId"
+                  value={recorrenteForm.tipoId}
+                  onChange={handleRecorrenteChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                >
+                  <option value="">Sem tipo</option>
+                  {tipos.map((tipo) => (
+                    <option key={tipo.id} value={tipo.id}>{tipo.descricao}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setModalRecorrenteAberto(false)}
+                  className="rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={salvandoRecorrente}
+                  className="rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
+                >
+                  {salvandoRecorrente ? 'Salvando...' : 'Salvar recorrente'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal 
         isOpen={confirmModal.open}

@@ -4,7 +4,7 @@ import { TrendingUp, DollarSign, ArrowUp, ArrowDown, Bell, CheckCircle2, Chevron
 import despesaService from '../../service/despesaService';
 import proventoService from '../../service/proventoService';
 import projecaoService from '../../service/projecaoService';
-import tipoService from '../../service/tipoService';
+import projecaoProventoService from '../../service/projecaoProventoService';
 import ResumoOrcamentoWidget from '../../components/ResumoOrcamentoWidget';
 import InputMoeda from '../../components/InputMoeda';
 import { useValoresVisiveis } from '../../hooks/useValoresVisiveis';
@@ -15,19 +15,13 @@ const hoje = new Date().toISOString().split('T')[0];
 const Home = () => {
   const [despesas, setDespesas] = useState([]);
   const [proventos, setProventos] = useState([]);
-  const [tipos, setTipos] = useState([]);
   const [projecoes, setProjecoes] = useState([]);
+  const [projecoesProventos, setProjecoesProventos] = useState([]);
   const [projecaoEdits, setProjecaoEdits] = useState({});
+  const [projecaoProventoEdits, setProjecaoProventoEdits] = useState({});
   const [alertasAbertos, setAlertasAbertos] = useState(false);
+  const [alertasProventosAbertos, setAlertasProventosAbertos] = useState(false);
   const [valoresVisiveis, setValoresVisiveis] = useValoresVisiveis();
-  const [modalRecorrenteAberto, setModalRecorrenteAberto] = useState(false);
-  const [salvandoRecorrente, setSalvandoRecorrente] = useState(false);
-  const [recorrenteForm, setRecorrenteForm] = useState({
-    descricao: '',
-    valorEstimado: '',
-    dataVencimento: new Date().toISOString().split('T')[0],
-    tipoId: '',
-  });
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState({ 
     mes: String(new Date().getMonth() + 1).padStart(2, '0'), 
@@ -39,18 +33,28 @@ const Home = () => {
     Promise.all([
       despesaService.listar({ mes: filtro.mes, ano: filtro.ano }),
       proventoService.listar({ mes: filtro.mes, ano: filtro.ano }),
-      projecaoService.listarPendentes({ mes: filtro.mes || undefined, ano: filtro.ano || undefined })
+      projecaoService.listarPendentes({ mes: filtro.mes || undefined, ano: filtro.ano || undefined }),
+      projecaoProventoService.listarPendentes({ mes: filtro.mes || undefined, ano: filtro.ano || undefined })
     ])
-      .then(([resDespesas, resProventos, resProjecoes]) => {
+      .then(([resDespesas, resProventos, resProjecoes, resProjecoesProventos]) => {
         setDespesas(resDespesas.data);
         setProventos(resProventos.data);
         setProjecoes(resProjecoes.data);
+        setProjecoesProventos(resProjecoesProventos.data);
         setProjecaoEdits(Object.fromEntries(resProjecoes.data.map((p) => [
           p.id,
           {
             descricaoReal: p.descricao || '',
             valorReal: p.valorEstimado ?? '',
             dataPagamento: hoje,
+          }
+        ])));
+        setProjecaoProventoEdits(Object.fromEntries(resProjecoesProventos.data.map((p) => [
+          p.id,
+          {
+            descricaoReal: p.descricao || '',
+            valorReal: p.valorEstimado ?? '',
+            dataRecebimento: hoje,
           }
         ])));
       })
@@ -62,14 +66,18 @@ const Home = () => {
     carregarDados();
   }, [filtro]);
 
-  useEffect(() => {
-    tipoService.listar()
-      .then((res) => setTipos(res.data))
-      .catch((err) => console.error("Erro ao carregar tipos:", err));
-  }, []);
-
   const handleProjecaoChange = (id, campo, valor) => {
     setProjecaoEdits((edits) => ({
+      ...edits,
+      [id]: {
+        ...edits[id],
+        [campo]: valor,
+      },
+    }));
+  };
+
+  const handleProjecaoProventoChange = (id, campo, valor) => {
+    setProjecaoProventoEdits((edits) => ({
       ...edits,
       [id]: {
         ...edits[id],
@@ -110,35 +118,32 @@ const Home = () => {
       .catch((error) => console.error("Erro ao excluir alerta do mes:", error));
   };
 
-  const handleRecorrenteChange = (e) => {
-    const { name, value } = e.target;
-    setRecorrenteForm((form) => ({ ...form, [name]: value }));
+  const confirmarProjecaoProvento = (projecao) => {
+    const edit = projecaoProventoEdits[projecao.id] || {};
+
+    projecaoProventoService.confirmar(projecao.id, {
+      descricaoReal: edit.descricaoReal,
+      valorReal: Number(edit.valorReal),
+      dataRecebimento: edit.dataRecebimento || hoje,
+    })
+      .then(() => carregarDados())
+      .catch((error) => console.error("Erro ao confirmar projeção de provento:", error));
   };
 
-  const criarRecorrente = (e) => {
-    e.preventDefault();
-    if (salvandoRecorrente) return;
+  const excluirProjecaoProvento = (projecao) => {
+    if (!window.confirm('Deseja excluir esta recorrencia de provento?')) return;
 
-    setSalvandoRecorrente(true);
-    projecaoService.criarRecorrente({
-      descricao: recorrenteForm.descricao,
-      valorEstimado: Number(recorrenteForm.valorEstimado),
-      dataVencimento: recorrenteForm.dataVencimento,
-      tipoId: recorrenteForm.tipoId || null,
-    })
-      .then(() => {
-        setModalRecorrenteAberto(false);
-        setAlertasAbertos(true);
-        setRecorrenteForm({
-          descricao: '',
-          valorEstimado: '',
-          dataVencimento: new Date().toISOString().split('T')[0],
-          tipoId: '',
-        });
-        carregarDados();
-      })
-      .catch((error) => console.error("Erro ao criar despesa recorrente:", error))
-      .finally(() => setSalvandoRecorrente(false));
+    projecaoProventoService.excluir(projecao.id)
+      .then(() => carregarDados())
+      .catch((error) => console.error("Erro ao excluir recorrencia de provento:", error));
+  };
+
+  const excluirProjecaoProventoApenasMes = (projecao) => {
+    if (!window.confirm('Deseja excluir este recebimento apenas neste mes?')) return;
+
+    projecaoProventoService.excluirMes(projecao.id)
+      .then(() => carregarDados())
+      .catch((error) => console.error("Erro ao excluir recebimento do mes:", error));
   };
 
   const totalGasto = useMemo(() => 
@@ -156,6 +161,10 @@ const Home = () => {
   const totalProjetado = useMemo(() =>
     projecoes.reduce((acc, p) => acc + Number(p.valorEstimado || 0), 0),
   [projecoes]);
+
+  const totalProventosProjetados = useMemo(() =>
+    projecoesProventos.reduce((acc, p) => acc + Number(p.valorEstimado || 0), 0),
+  [projecoesProventos]);
 
   const formatarValorGrande = (valor) => {
     if (!valoresVisiveis) return 'R$ ••••••';
@@ -244,14 +253,6 @@ const Home = () => {
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 font-semibold transition hover:bg-gray-50"
           >
             {valoresVisiveis ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setModalRecorrenteAberto(true)}
-            className="rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-amber-700"
-          >
-            Nova recorrente
           </button>
 
           <div className="w-40">
@@ -372,6 +373,97 @@ const Home = () => {
                       className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
                     >
                       <Trash2 size={18} /> {p.tipoRecorrencia === 'RECORRENTE_VARIAVEL' ? 'Excluir recorrência' : 'Excluir'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {projecoesProventos.length > 0 && (
+        <section className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setAlertasProventosAbertos((aberto) => !aberto)}
+            className="flex w-full items-center justify-between gap-3 p-4 text-left"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-emerald-100 p-2 text-emerald-700">
+                <Bell size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-emerald-900">Proventos projetados para receber</h2>
+                <p className="text-xs text-emerald-700">
+                  {projecoesProventos.length} pendente(s) no periodo - Total estimado R$ {totalProventosProjetados.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2 text-sm font-semibold text-emerald-800">
+              {alertasProventosAbertos ? 'Recolher' : 'Ver alertas'}
+              {alertasProventosAbertos ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </div>
+          </button>
+
+          {alertasProventosAbertos && (
+            <div className="grid gap-3 border-t border-emerald-200 p-4 pt-3 lg:grid-cols-2">
+              {projecoesProventos.map((p) => (
+                <div key={p.id} className="grid gap-3 rounded-lg border border-emerald-100 bg-white p-3 sm:grid-cols-[1fr_120px_150px]">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Descricao</label>
+                    <input
+                      type="text"
+                      value={projecaoProventoEdits[p.id]?.descricaoReal || ''}
+                      onChange={(e) => handleProjecaoProventoChange(p.id, 'descricaoReal', e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    />
+                    <p className="mt-1 text-xs text-gray-400">
+                      previsto para {new Date(p.dataVencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Valor</label>
+                    <InputMoeda
+                      name="valorReal"
+                      value={projecaoProventoEdits[p.id]?.valorReal || ''}
+                      onChange={(e) => handleProjecaoProventoChange(p.id, 'valorReal', e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Recebido em</label>
+                    <input
+                      type="date"
+                      value={projecaoProventoEdits[p.id]?.dataRecebimento || hoje}
+                      onChange={(e) => handleProjecaoProventoChange(p.id, 'dataRecebimento', e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    />
+                  </div>
+
+                  <div className="grid gap-2 sm:col-span-3 sm:grid-cols-[1fr_auto_auto]">
+                    <button
+                      type="button"
+                      onClick={() => confirmarProjecaoProvento(p)}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                    >
+                      <CheckCircle2 size={18} /> Confirmar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => excluirProjecaoProventoApenasMes(p)}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-50"
+                    >
+                      <Trash2 size={18} /> Excluir mes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => excluirProjecaoProvento(p)}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+                    >
+                      <Trash2 size={18} /> Excluir recorrencia
                     </button>
                   </div>
                 </div>
@@ -526,90 +618,6 @@ const Home = () => {
             </div>
           )}
         </>
-      )}
-
-      {modalRecorrenteAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
-            <div className="mb-5">
-              <h2 className="text-lg font-bold text-gray-800">Nova despesa recorrente</h2>
-              <p className="text-sm text-gray-500">
-                Crie um alerta mensal para contas de valor variável, como água ou luz.
-              </p>
-            </div>
-
-            <form onSubmit={criarRecorrente} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Descrição</label>
-                <input
-                  type="text"
-                  name="descricao"
-                  value={recorrenteForm.descricao}
-                  onChange={handleRecorrenteChange}
-                  required
-                  placeholder="Ex: Conta de luz"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Valor estimado</label>
-                  <InputMoeda
-                    name="valorEstimado"
-                    value={recorrenteForm.valorEstimado}
-                    onChange={handleRecorrenteChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Primeiro vencimento</label>
-                  <input
-                    type="date"
-                    name="dataVencimento"
-                    value={recorrenteForm.dataVencimento}
-                    onChange={handleRecorrenteChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Tipo da despesa</label>
-                <select
-                  name="tipoId"
-                  value={recorrenteForm.tipoId}
-                  onChange={handleRecorrenteChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                >
-                  <option value="">Sem tipo</option>
-                  {tipos.map((tipo) => (
-                    <option key={tipo.id} value={tipo.id}>{tipo.descricao}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setModalRecorrenteAberto(false)}
-                  className="rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvandoRecorrente}
-                  className="rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
-                >
-                  {salvandoRecorrente ? 'Salvando...' : 'Salvar recorrente'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
       )}
     </div>
   );
