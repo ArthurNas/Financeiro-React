@@ -20,7 +20,7 @@ jobs:
 
       - name: Instalar Dependências e Buildar
         env:
-          VITE_API_URL: https://financeiro.art.br
+          VITE_API_URL: https://financeiro.art.br/api
         run: |
           npm ci
           npm run build
