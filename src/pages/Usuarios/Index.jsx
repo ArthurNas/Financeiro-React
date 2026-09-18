@@ -2,10 +2,14 @@ import { useEffect, useState } from 'react';
 import usuarioService from '../../service/usuarioService';
 import { Edit2, Plus, Search, Trash2, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/confirmModal';
+import MessageModal from '../../components/messageModal';
 
 function Usuarios() {
     const [usuarios, setUsuarios] = useState([]);
     const [filtroNome, setFiltroNome] = useState('');
+    const [confirmModal, setConfirmModal] = useState({ open: false, idParaExcluir: null });
+    const [messageModal, setMessageModal] = useState({ open: false, type: 'error', message: '' });
     const navigate = useNavigate();
 
     const buscarDados = async () => {
@@ -24,11 +28,20 @@ function Usuarios() {
     }, [filtroNome]);
 
     const deletarUsuario = (id) => {
-        if (window.confirm("Deseja realmente excluir este usuário?")) {
-            usuarioService.excluir(id)
-                .then(() => buscarDados())
-                .catch(err => alert("Erro ao deletar: " + err.message));
-        }
+        setConfirmModal({ open: true, idParaExcluir: id });
+    };
+
+    const confirmarExclusao = () => {
+        const id = confirmModal.idParaExcluir;
+        if (!id) return;
+
+        usuarioService.excluir(id)
+            .then(() => buscarDados())
+            .catch((err) => setMessageModal({
+                open: true,
+                type: 'error',
+                message: `Erro ao deletar: ${err.message}`,
+            }));
     };
 
     const perfilClass = (role) => {
@@ -160,6 +173,19 @@ function Usuarios() {
                     )}
                 </div>
             </div>
+            <ConfirmModal
+                isOpen={confirmModal.open}
+                title="Excluir usuário"
+                message="Deseja realmente excluir este usuário?"
+                onClose={() => setConfirmModal({ open: false, idParaExcluir: null })}
+                onConfirm={confirmarExclusao}
+            />
+            <MessageModal
+                isOpen={messageModal.open}
+                type={messageModal.type}
+                message={messageModal.message}
+                onClose={() => setMessageModal({ ...messageModal, open: false })}
+            />
         </div>
     );
 }

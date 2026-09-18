@@ -15,6 +15,11 @@ function TipoDespesa() {
 
     const [filtroDescricao, setFiltroDescricao] = useState(() => sessionStorage.getItem('tipo_filtroDescricao') || '')
 
+    const formatarMoeda = (valor) => {
+      if (valor === null || valor === undefined || valor === '') return 'Sem teto';
+      return `R$ ${Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    };
+
     const buscarDados = async () => {
       try {
           const response = await tipoService.listar({
@@ -104,6 +109,9 @@ function TipoDespesa() {
                       <span className="text-xs text-gray-400">Sem aporte</span>
                     )}
                   </div>
+                  <p className="mt-2 text-xs font-medium text-gray-500">
+                    Teto mensal: <span className="text-gray-800">{formatarMoeda(t.valorEstimadoMensal)}</span>
+                  </p>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1">
@@ -135,10 +143,11 @@ function TipoDespesa() {
         </div>
 
         <div className="hidden bg-white rounded-xl shadow-sm overflow-x-auto md:block">
-          <table className="w-full min-w-[560px] text-left border-collapse">
+          <table className="w-full min-w-[680px] text-left border-collapse">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="p-4 font-semibold text-sm text-gray-600">Descrição</th>
+                <th className="p-4 font-semibold text-sm text-gray-600">Teto mensal</th>
                 <th className="p-4 font-semibold text-sm text-gray-600 text-center">Aporte</th>
                 <th className="p-4 font-semibold text-sm text-gray-600 text-end">Ações</th>
               </tr>
@@ -147,6 +156,9 @@ function TipoDespesa() {
               {tipos.map((t) => (
                 <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="p-4 text-sm">{t.descricao}</td>
+                  <td className="p-4 text-sm font-semibold text-gray-700">
+                    {formatarMoeda(t.valorEstimadoMensal)}
+                  </td>
                   <td className="p-4 text-center">
                     {t.isAporte ? (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">

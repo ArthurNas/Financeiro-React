@@ -2,27 +2,41 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { TrendingUp, DollarSign, ArrowUp, ArrowDown, Bell, CheckCircle2, ChevronDown, ChevronUp, Trash2, Eye, EyeOff } from 'lucide-react';
 import despesaService from '../../service/despesaService';
-import proventoService from '../../service/proventoService';
 import projecaoService from '../../service/projecaoService';
 import projecaoProventoService from '../../service/projecaoProventoService';
 import ResumoOrcamentoWidget from '../../components/ResumoOrcamentoWidget';
 import InputMoeda from '../../components/InputMoeda';
+import ConfirmModal from '../../components/confirmModal';
 import { useValoresVisiveis } from '../../hooks/useValoresVisiveis';
+import api from '../../lib/api';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 const hoje = new Date().toISOString().split('T')[0];
 
 const Home = () => {
   const [despesas, setDespesas] = useState([]);
-  const [proventos, setProventos] = useState([]);
   const [projecoes, setProjecoes] = useState([]);
   const [projecoesProventos, setProjecoesProventos] = useState([]);
   const [projecaoEdits, setProjecaoEdits] = useState({});
   const [projecaoProventoEdits, setProjecaoProventoEdits] = useState({});
   const [alertasAbertos, setAlertasAbertos] = useState(false);
   const [alertasProventosAbertos, setAlertasProventosAbertos] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+  });
   const [valoresVisiveis, setValoresVisiveis] = useValoresVisiveis();
   const [loading, setLoading] = useState(true);
+  const [resumoHome, setResumoHome] = useState({
+    totalEstimado: 0,
+    totalDespesasMes: 0,
+    orcamentoRestante: 0,
+    saldoLivreProjetado: 0,
+    saldoReservado: 0,
+    totalReceitasMes: 0,
+  });
   const [filtro, setFiltro] = useState({ 
     mes: String(new Date().getMonth() + 1).padStart(2, '0'), 
     ano: String(new Date().getFullYear()) 
@@ -32,15 +46,15 @@ const Home = () => {
     setLoading(true);
     Promise.all([
       despesaService.listar({ mes: filtro.mes, ano: filtro.ano }),
-      proventoService.listar({ mes: filtro.mes, ano: filtro.ano }),
       projecaoService.listarPendentes({ mes: filtro.mes || undefined, ano: filtro.ano || undefined }),
-      projecaoProventoService.listarPendentes({ mes: filtro.mes || undefined, ano: filtro.ano || undefined })
+      projecaoProventoService.listarPendentes({ mes: filtro.mes || undefined, ano: filtro.ano || undefined }),
+      api.get('/resumo/home', { params: { mes: filtro.mes || undefined, ano: filtro.ano || undefined } })
     ])
-      .then(([resDespesas, resProventos, resProjecoes, resProjecoesProventos]) => {
+      .then(([resDespesas, resProjecoes, resProjecoesProventos, resResumoHome]) => {
         setDespesas(resDespesas.data);
-        setProventos(resProventos.data);
         setProjecoes(resProjecoes.data);
         setProjecoesProventos(resProjecoesProventos.data);
+        setResumoHome(resResumoHome.data);
         setProjecaoEdits(Object.fromEntries(resProjecoes.data.map((p) => [
           p.id,
           {
@@ -99,23 +113,26 @@ const Home = () => {
   };
 
   const excluirProjecao = (projecao) => {
-    const mensagem = projecao.tipoRecorrencia === 'RECORRENTE_VARIAVEL'
-      ? 'Deseja excluir esta recorrência?'
-      : 'Deseja excluir este alerta?';
-
-    if (!window.confirm(mensagem)) return;
-
-    projecaoService.excluir(projecao.id)
-      .then(() => carregarDados())
-      .catch((error) => console.error("Erro ao excluir projeção:", error));
+    const recorrente = projecao.tipoRecorrencia === 'RECORRENTE_VARIAVEL';
+    setConfirmModal({
+      open: true,
+      title: recorrente ? 'Excluir recorrência' : 'Excluir alerta',
+      message: recorrente ? 'Deseja excluir esta recorrência?' : 'Deseja excluir este alerta?',
+      onConfirm: () => projecaoService.excluir(projecao.id)
+        .then(() => carregarDados())
+        .catch((error) => console.error("Erro ao excluir projeção:", error)),
+    });
   };
 
   const excluirProjecaoApenasMes = (projecao) => {
-    if (!window.confirm('Deseja excluir este alerta apenas neste mes?')) return;
-
-    projecaoService.excluirMes(projecao.id)
-      .then(() => carregarDados())
-      .catch((error) => console.error("Erro ao excluir alerta do mes:", error));
+    setConfirmModal({
+      open: true,
+      title: 'Excluir somente deste mês',
+      message: 'Deseja excluir este alerta apenas deste mês?',
+      onConfirm: () => projecaoService.excluirMes(projecao.id)
+        .then(() => carregarDados())
+        .catch((error) => console.error("Erro ao excluir alerta do mes:", error)),
+    });
   };
 
   const confirmarProjecaoProvento = (projecao) => {
@@ -131,36 +148,37 @@ const Home = () => {
   };
 
   const excluirProjecaoProvento = (projecao) => {
-    if (!window.confirm('Deseja excluir esta recorrencia de provento?')) return;
-
-    projecaoProventoService.excluir(projecao.id)
-      .then(() => carregarDados())
-      .catch((error) => console.error("Erro ao excluir recorrencia de provento:", error));
+    setConfirmModal({
+      open: true,
+      title: 'Excluir recorrência de provento',
+      message: 'Deseja excluir esta recorrência de provento?',
+      onConfirm: () => projecaoProventoService.excluir(projecao.id)
+        .then(() => carregarDados())
+        .catch((error) => console.error("Erro ao excluir recorrencia de provento:", error)),
+    });
   };
 
   const excluirProjecaoProventoApenasMes = (projecao) => {
-    if (!window.confirm('Deseja excluir este recebimento apenas neste mes?')) return;
-
-    projecaoProventoService.excluirMes(projecao.id)
-      .then(() => carregarDados())
-      .catch((error) => console.error("Erro ao excluir recebimento do mes:", error));
+    setConfirmModal({
+      open: true,
+      title: 'Excluir somente deste mês',
+      message: 'Deseja excluir este recebimento apenas deste mês?',
+      onConfirm: () => projecaoProventoService.excluirMes(projecao.id)
+        .then(() => carregarDados())
+        .catch((error) => console.error("Erro ao excluir recebimento do mes:", error)),
+    });
   };
-
-  const totalGasto = useMemo(() => 
-    despesas.reduce((acc, d) => acc + d.valor, 0), 
-  [despesas]);
-
-  const totalRenda = useMemo(() => 
-    proventos.reduce((acc, p) => acc + p.valor, 0), 
-  [proventos]);
-
-  const saldoMes = useMemo(() => 
-    totalRenda - totalGasto, 
-  [totalRenda, totalGasto]);
 
   const totalProjetado = useMemo(() =>
     projecoes.reduce((acc, p) => acc + Number(p.valorEstimado || 0), 0),
   [projecoes]);
+
+  const totalGasto = Number(resumoHome.totalDespesasMes || 0);
+  const totalRenda = Number(resumoHome.totalReceitasMes || 0);
+  const totalEstimado = Number(resumoHome.totalEstimado || 0);
+  const saldoReservado = Number(resumoHome.saldoReservado || 0) + totalProjetado;
+  const saldoMes = totalRenda - totalGasto;
+  const orcamentoRestante = saldoMes - saldoReservado;
 
   const totalProventosProjetados = useMemo(() =>
     projecoesProventos.reduce((acc, p) => acc + Number(p.valorEstimado || 0), 0),
@@ -170,10 +188,6 @@ const Home = () => {
     if (!valoresVisiveis) return 'R$ ••••••';
     return `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
-
-  const maiorGasto = useMemo(() => 
-    despesas.length > 0 ? Math.max(...despesas.map(d => d.valor)) : 0, 
-  [despesas]);
 
   const dadosPorTipo = useMemo(() => {
     const grupos = despesas.reduce((acc, d) => {
@@ -479,7 +493,7 @@ const Home = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-3">
             <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
@@ -512,13 +526,13 @@ const Home = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase">Saldo do Mês</p>
-                  <p className={`text-2xl font-bold mt-1 ${saldoMes >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className={`text-2xl font-bold mt-1 ${saldoMes >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                     {formatarValorGrande(saldoMes)}
                   </p>
                 </div>
-                <div className={`p-3 rounded-lg ${saldoMes >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                <div className={`p-3 rounded-lg ${saldoMes >= 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
                   {saldoMes >= 0 ? (
-                    <ArrowUp className="text-green-500" size={24} />
+                    <ArrowUp className="text-blue-500" size={24} />
                   ) : (
                     <ArrowDown className="text-red-500" size={24} />
                   )}
@@ -529,13 +543,34 @@ const Home = () => {
             <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase">Maior Gasto</p>
-                  <p className="text-2xl font-bold text-orange-600 mt-1">
-                    {formatarValorGrande(maiorGasto)}
+                  <p className="text-xs font-semibold text-gray-500 uppercase">Valor Reservado</p>
+                  <p className={`text-2xl font-bold mt-1 ${saldoReservado >= 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                    {formatarValorGrande(saldoReservado)}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Projetado {formatarValorGrande(totalEstimado)}
                   </p>
                 </div>
-                <div className="p-3 bg-orange-50 rounded-lg">
-                  <ArrowUp className="text-orange-500" size={24} />
+                <div className={`p-3 rounded-lg ${saldoReservado >= 0 ? 'bg-amber-50' : 'bg-red-50'}`}>
+                  <DollarSign className={saldoReservado >= 0 ? 'text-amber-500' : 'text-red-500'} size={24} />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase">Orçamento Restante</p>
+                  <p className={`text-2xl font-bold mt-1 ${orcamentoRestante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatarValorGrande(orcamentoRestante)}
+                  </p>
+                </div>
+                <div className={`p-3 rounded-lg ${orcamentoRestante >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                  {orcamentoRestante >= 0 ? (
+                    <ArrowUp className="text-green-500" size={24} />
+                  ) : (
+                    <ArrowDown className="text-red-500" size={24} />
+                  )}
                 </div>
               </div>
             </div>
@@ -619,6 +654,13 @@ const Home = () => {
           )}
         </>
       )}
+      <ConfirmModal
+        isOpen={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onClose={() => setConfirmModal({ open: false, title: '', message: '', onConfirm: null })}
+        onConfirm={confirmModal.onConfirm || (() => {})}
+      />
     </div>
   );
 };
